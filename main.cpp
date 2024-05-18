@@ -9,18 +9,14 @@ using namespace std;
 void representationsMenu(Graph graph);
 void removalsAndInsertionsMenu(Graph& graph);
 void backMenu();
+void verificationsMenu(Graph graph);
 
 int main(int argc, char *argv[]) {
-    string filePath = "input.txt";
+    string filePath = "input.txt"; 
     bool directGraph = false;
     char option;
 
-    // caso eu queira deixar a funcao de indicar o caminho do arquivo como parametro de inicializacao
-    // if (argc != 2) {
-    //     cout << "usage " << argv[0] << " /path/to/graph" << endl;
-    //     return 1;
-    // }
-    // filePath = argv[1];
+    if (argc == 2) filePath = argv[1];  
 
     cout << "Running program for directed graph?(Y/N)";
     cin >> option;
@@ -35,20 +31,22 @@ int main(int argc, char *argv[]) {
             cout << "menu" << endl << endl;
             cout << "1 - representations" << endl;
             cout << "2 - removals and insertions" << endl;
+            cout << "3 - verifications" << endl;
             cout << "0 - quit" << endl << endl;
             cout << "choose a option:";
 
             cin >> option;
 
             switch(option) {
-                case '1': {
+                case '1': 
                     representationsMenu(graph);
                     break;
-                }
-                case '2': {
+                case '2': 
                     removalsAndInsertionsMenu(graph);
                     break;
-                }
+                case '3':
+                    verificationsMenu(graph);
+                    break;
                 default:
                     option = '0';
                     break;
@@ -72,7 +70,8 @@ void representationsMenu(Graph graph) {
     cout << "representations:" << endl << endl;
     cout << "1 - adjacency matrix" << endl;
     cout << "2 - adjacency list" << endl;
-    cout << "3 - graphic representation" << endl << endl;
+    cout << "3 - graphic representation" << endl;
+    cout << "4 - debug" << endl << endl;
     cout << "choose a option:";
     cin >> option;
     system("clear || cls");
@@ -86,6 +85,9 @@ void representationsMenu(Graph graph) {
             break;
         case 3: 
             generateGraphDotFile(graph);
+            break;
+        case 4:
+            graph.printFormatedData();
             break;
         default:
             break;
@@ -149,6 +151,50 @@ void removalsAndInsertionsMenu(Graph& graph) {
     }
 
     generateTextFile(graph);
+    backMenu();
+}
+
+void verificationsMenu(Graph graph) {
+    int option;
+    int vertix;
+
+    system("clear || cls");
+    cout << "verifications:" << endl << endl;
+    cout << "1 - number of vertices" << endl;
+    cout << "2 - number of edges" << endl;
+    cout << "3 - degree of a vertix" << endl;
+    cout << "4 - is the graph connected?" << endl;
+    cout << "5 - does the graph have cycles?" << endl;
+    cout << "6 - is the graph Eulerian?" << endl << endl;;
+    cout << "choose a option:";
+    cin >> option;
+    system("clear || cls");
+
+    switch(option) {
+        case 1: 
+            cout << "num vertix: " << graph.getNumVertix() << endl;
+            break;
+        case 2: 
+            cout << "num edges: " << graph.getNumEdges() << endl;
+            break;
+        case 3: { 
+            cout << "enter a vertix: ";
+            cin >> vertix;
+            system("clear || cls");
+            cout << "degree of vertix " << vertix << ": " << graph.getVertixDegree(vertix) << endl;
+            break;
+        }
+        case 4: 
+            isConnected(graph) ? cout << "true" << endl : cout << "false" << endl;
+            break;
+        case 5: 
+            break;
+        case 6: 
+            break;
+        default:
+            break;
+    }
+
     backMenu();
 }
 

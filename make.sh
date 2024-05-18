@@ -1,1 +1,0 @@
-g++ main.cpp resources.cpp graph.cpp -o programa.o
