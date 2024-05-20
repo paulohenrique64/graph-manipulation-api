@@ -20,15 +20,15 @@ struct Edge {
 class Graph {
     public:
         Graph() = default; // construtor vazio
-        Graph(string filePath, bool directGraph); // construtor recebendo arquivo
+        Graph(List<int> vertixList, List<Edge> edgeList); // construtor recebendo lista de vertices e arestas
         Graph(Graph& other); // construtor de copia
-        void removeEdge(Edge edge);
-        void addEdge(Edge edge);
+        Graph operator=(Graph& other); 
+        virtual void removeEdge(Edge edge);
+        virtual void addEdge(Edge edge);
         void removeVertix(int vertix);
         void addVertix(int vertix);
-        bool hasEdge(Edge edge, bool reverseVerification = false);
+        bool hasEdge(Edge edge);
         bool hasVertix(int vertix);
-        bool isDirected();
         int getNumVertix();
         int vertixAt(int index);
         int indexOfVertix(int vertix);
@@ -36,22 +36,26 @@ class Graph {
         Edge edgeAt(int index);
         int indexOfEdge(Edge edge);
         int getVertixDegree(int vertix);
+        virtual bool isDirected();
+        List<Edge> getEdgeList();
+        List<int> getVertixList();
 
         List<List<int>> getAdjacencyList();
         void printAdjacencyMatrix();
         void printAdjacencyList();
         void printFormatedData();
 
-    private:
-        bool directGraph = false;
+    protected:
         List<Edge> edgeList;
         List<int> vertixList;
+
+    private:
+        bool directGraph = false;
         List<List<int>> adjacencyMatrix;
         List<List<int>> adjacencyList;
 
         void updateAdjacencyMatrix();
         void updateAdjacencyList();
-        void deleteGraph();
 };
 
 
@@ -77,83 +81,9 @@ ostream& operator<<(ostream& os, const Edge& edge) {
 }
 
 
-Graph::Graph(string filePath, bool directGraph) {
-    ifstream graphFile;
-    string buffer;
-    exception parseError;
-    Edge edge;
-    int num;
-    char trash;
-
-    this->directGraph = directGraph;
-    
-    graphFile.exceptions(ifstream::failbit | ifstream::badbit);
-
-    try {
-        graphFile.open(filePath);
-    } catch (ifstream::failure fileError) {
-        throw fileError;
-    }
-
-    // tenta fazer o parse de "V = {x,y};"
-    getline(graphFile, buffer, '{');
-    if (buffer != "V = ") throw parseError;
-    getline(graphFile, buffer, ';');
-    stringstream stringBuffer(buffer);
-
-    do { 
-        stringBuffer >> num;
-        stringBuffer >> trash;
-
-        if (stringBuffer.fail() or (trash != ',' && trash != '}')) throw parseError;
-
-        this->addVertix(num);
-    } while (trash != '}');
-
-    // tenta fazer o parse de "A = {x,y};"
-    // tenta fazer o parse de "A = {(x,y),(w,x),(y,z)};"
-    // tenta fazer o parse de "A = {};"
-    getline(graphFile, buffer, '{');
-    if (buffer != " A = ") throw parseError;
-    getline(graphFile, buffer, ';');
-    stringstream stringBuffer1(buffer);
-
-    if (buffer.length() == 4) { 
-        stringBuffer1 >> num;
-        stringBuffer1 >> trash;
-        edge.vertix1 = num;
-
-        stringBuffer1 >> num;
-        edge.vertix2 = num;
-
-        if (stringBuffer1.fail()) throw parseError;
-
-        try {
-            this->addEdge(edge);
-        } catch(exception e) {
-            throw parseError;
-        }
-    } else if (buffer.length() > 4) { 
-        do { 
-            stringBuffer1 >> trash;
-            stringBuffer1 >> num;
-            edge.vertix1 = num;
-
-            stringBuffer1 >> trash;
-            stringBuffer1 >> num;
-            edge.vertix2 = num;
-            stringBuffer1 >> trash;
-            stringBuffer1 >> trash;
-
-            if (stringBuffer1.fail()) throw parseError;
-            
-            try {
-                this->addEdge(edge);
-            } catch(exception e) {
-                throw parseError;
-            }
-        } while (trash != '}');
-    }
+Graph::Graph(List<int> vertixList, List<Edge> edgeList) {
+    for (int i = 0; i < vertixList.length(); i++) this->addVertix(vertixList.at(i));
+    for (int i = 0; i < edgeList.length(); i++) this->addEdge(edgeList.at(i));
 }
 
 Graph::Graph(Graph& other) {
@@ -174,6 +104,28 @@ Graph::Graph(Graph& other) {
         this->edgeList = newEdgeList;
         this->vertixList = newVertixList;
     }
+}
+
+Graph Graph::operator=(Graph& other) {
+    List<Edge> newEdgeList;
+    List<int> newVertixList;
+
+    if (this != &other)  {
+        this->directGraph = other.isDirected();
+
+        for (int i = 0; i < other.getNumEdges(); i++) {
+            newEdgeList.insert(other.edgeAt(i));
+        }
+
+        for (int i = 0; i < other.getNumVertix(); i++) {
+            newVertixList.insert(other.vertixAt(i));
+        }
+
+        this->edgeList = newEdgeList;
+        this->vertixList = newVertixList;
+    }
+
+    return *this;
 }
 
 void Graph::printAdjacencyMatrix() {
@@ -232,21 +184,6 @@ void Graph::printFormatedData() {
     cout << "};" << endl;
 }
 
-bool Graph::hasEdge(Edge edge, bool reverseVerification) {
-    bool has = false;
-
-    if (this->edgeList.has(edge)) has = true;
-
-    if (reverseVerification) {
-        Edge reverseEdge;
-        reverseEdge.vertix1 = edge.vertix2;
-        reverseEdge.vertix2 = edge.vertix1;
-        if (this->edgeList.has(reverseEdge)) has = true;
-    }
-
-    return has;
-}
-
 void Graph::updateAdjacencyMatrix() {
     List<List<int>> newAdjacencyMatrix;
     List<int> vertixList = this->vertixList;
@@ -291,30 +228,13 @@ int Graph::getVertixDegree(int vertix) {
     int count = 0;
 
     for (int i = 0; i < edgeList.length(); i++) {
-        if (!this->directGraph and (edgeList.at(i).vertix1 == vertix or edgeList.at(i).vertix2 == vertix)) {
-            count++;
-        } else if (edgeList.at(i).vertix2 == vertix) {
-            count++;
-        }
+        if (edgeList.at(i).vertix2 == vertix) count++;
     }
 
     return count;
 }
 
-void Graph::removeEdge(Edge edge) {
-    if (!this->hasEdge(edge)) return;
-    this->edgeList.remove(edge);
-}
-
-void Graph::addEdge(Edge edge) {
-    exception insertionError;
-    if (!this->hasVertix(edge.vertix1) or !this->hasVertix(edge.vertix2)) throw insertionError;
-    this->edgeList.insert(edge);
-}
-
 void Graph::removeVertix(int vertix) {
-    if (!this->hasVertix(vertix)) return;
-
     List<Edge> edgeList = this->edgeList;
 
     this->vertixList.remove(vertix);
@@ -324,16 +244,36 @@ void Graph::removeVertix(int vertix) {
     }
 }
 
+bool Graph::hasEdge(Edge edge) {
+    return this->edgeList.has(edge);
+}
+
+void Graph::removeEdge(Edge edge) {
+    Edge reverseEdge;
+
+    reverseEdge.vertix1 = edge.vertix2;
+    reverseEdge.vertix2 = edge.vertix1;
+
+    this->edgeList.remove(edge);
+    this->edgeList.remove(reverseEdge);
+}
+
+void Graph::addEdge(Edge edge) {
+    Edge reverseEdge;
+
+    reverseEdge.vertix1 = edge.vertix2;
+    reverseEdge.vertix2 = edge.vertix1;
+
+    if (!this->edgeList.has(edge)) this->edgeList.insert(edge);
+    if (!this->edgeList.has(reverseEdge)) this->edgeList.insert(reverseEdge);
+}
+
 void Graph::addVertix(int vertix) {
     this->vertixList.insert(vertix);
 }
 
 bool Graph::hasVertix(int vertix) {
     return this->vertixList.has(vertix);
-}
-
-bool Graph::isDirected() {
-    return this->directGraph;
 }
 
 int Graph::getNumVertix() {
@@ -364,4 +304,16 @@ List<List<int>> Graph::getAdjacencyList() {
     this->updateAdjacencyList();
     List<List<int>> newAdjacencyList = this->adjacencyList;
     return newAdjacencyList;
+}
+
+bool Graph::isDirected() {
+    return this->directGraph;
+}
+
+List<Edge> Graph::getEdgeList() {
+    return this->edgeList;
+}
+
+List<int> Graph::getVertixList() {
+    return this->vertixList;
 }

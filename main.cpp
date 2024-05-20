@@ -6,10 +6,10 @@
 
 using namespace std;
 
+void removalsAndInsertionsMenu(Graph* graph);
 void representationsMenu(Graph graph);
-void removalsAndInsertionsMenu(Graph& graph);
-void backMenu();
 void verificationsMenu(Graph graph);
+void backMenu();
 
 int main(int argc, char *argv[]) {
     string filePath = "input.txt"; 
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     if (option == 'Y' or option == 'y') directGraph = true;
 
     try {
-        Graph graph(filePath, directGraph);
+        Graph *graph = generateGraphFromFile(filePath, directGraph);
 
         do {
             system("clear || cls");
@@ -39,13 +39,13 @@ int main(int argc, char *argv[]) {
 
             switch(option) {
                 case '1': 
-                    representationsMenu(graph);
+                    representationsMenu(*graph);
                     break;
                 case '2': 
                     removalsAndInsertionsMenu(graph);
                     break;
                 case '3':
-                    verificationsMenu(graph);
+                    verificationsMenu(*graph);
                     break;
                 default:
                     option = '0';
@@ -96,7 +96,7 @@ void representationsMenu(Graph graph) {
     backMenu();
 }
 
-void removalsAndInsertionsMenu(Graph& graph) {
+void removalsAndInsertionsMenu(Graph* graph) {
     int option;
 
     system("clear || cls");
@@ -118,7 +118,7 @@ void removalsAndInsertionsMenu(Graph& graph) {
             cin >> edge.vertix1;
             cout << "enter a edge vertix 2:";
             cin >> edge.vertix2;
-            graph.removeEdge(edge);
+            graph->removeEdge(edge);
             break;
         }
         case 2: {
@@ -128,7 +128,7 @@ void removalsAndInsertionsMenu(Graph& graph) {
             cin >> edge.vertix2;
 
             try {
-                graph.addEdge(edge);
+                graph->addEdge(edge);
             } catch (exception e) {
                 cout << "failed to add seleced edge" << endl;
             }
@@ -137,20 +137,20 @@ void removalsAndInsertionsMenu(Graph& graph) {
         case 3: {
             cout << "enter a vertix to remove:";
             cin >> vertix;
-            graph.removeVertix(vertix);
+            graph->removeVertix(vertix);
             break;
         }
         case 4: { 
             cout << "enter a vertix to add:";
             cin >> vertix;
-            graph.addVertix(vertix);
+            graph->addVertix(vertix);
             break;
         }
         default:
             break;
     }
 
-    generateTextFile(graph);
+    generateTextFile(*graph);
     backMenu();
 }
 
