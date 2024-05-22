@@ -1,4 +1,4 @@
-para executar o trabalho
+running project
 
 ```
 sudo apt install graphviz
