@@ -21,6 +21,7 @@ class List {
         T& at(int index) const;
         int length() const;
         void printList() const;
+        bool isEmpty();
 
     private:
         T* list = nullptr;
@@ -74,12 +75,16 @@ void List<T>::remove(T element) {
     if (!this->has(element)) return;
 
     T *newList = new T[this->numElements-1];
+
+    int i = 0;
     int count = 0;
 
-    for (int i = 0; i < this->numElements; i++) {
-        if (this->list[i] != element) {
-            newList[count++] = this->list[i];
-        }
+    while (this->list[i] != element) 
+        i++;
+
+    for (int j = 0; j < this->numElements; j++) {
+        if (j != i)
+            newList[count++] = this->list[j];
     }
 
     delete[] this->list;
@@ -171,4 +176,9 @@ ostream& operator<<(ostream& os, const List<T>& list) {
     }
     cout << endl;
     return os;      
+}
+
+template <typename T>
+bool List<T>::isEmpty() {
+    return this->numElements == 0;
 }

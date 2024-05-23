@@ -1,15 +1,20 @@
 #include <iostream>
 #include <fstream>
 #include <exception>
+#include <iomanip>
+#include <chrono>
 #include "graph.hpp"
+#include "digraph.hpp"
 #include "resources.hpp"
 
 using namespace std;
+using namespace chrono;
 
 void removalsAndInsertionsMenu(Graph* graph);
 void representationsMenu(Graph graph);
-void verificationsMenu(Graph graph);
+void verificationsMenu(Graph* graph);
 void backMenu();
+
 
 int main(int argc, char *argv[]) {
     string filePath = "input.txt"; 
@@ -45,7 +50,7 @@ int main(int argc, char *argv[]) {
                     removalsAndInsertionsMenu(graph);
                     break;
                 case '3':
-                    verificationsMenu(*graph);
+                    verificationsMenu(graph);
                     break;
                 default:
                     option = '0';
@@ -64,6 +69,7 @@ int main(int argc, char *argv[]) {
 }
 
 void representationsMenu(Graph graph) {
+    time_point<system_clock> start, end; // para marcar o tempo de execucao dos metodos
     int option;
 
     system("clear || cls");
@@ -76,6 +82,7 @@ void representationsMenu(Graph graph) {
     cin >> option;
     system("clear || cls");
 
+    start = system_clock::now();
     switch(option) {
         case 1: 
             graph.printAdjacencyMatrix();
@@ -92,108 +99,160 @@ void representationsMenu(Graph graph) {
         default:
             break;
     }
+    end = system_clock::now();
+
+    duration<double> elapsed_seconds = end - start;
+    cout << endl << "execution time: " << setprecision(5) << fixed << elapsed_seconds.count() << "s\n";
 
     backMenu();
 }
 
 void removalsAndInsertionsMenu(Graph* graph) {
+    time_point<system_clock> start, end; // para marcar o tempo de execucao dos metodos
     int option;
+    int vertex, source, destination;
 
     system("clear || cls");
     cout << "removals and insertions:" << endl << endl;
     cout << "1 - remove edge" << endl;
     cout << "2 - add edge" << endl;
-    cout << "3 - remove vertix" << endl;
-    cout << "4 - add vertix" << endl << endl;
+    cout << "3 - remove vertex" << endl;
+    cout << "4 - add vertex" << endl << endl;
     cout << "choose a option:";
     cin >> option;
     system("clear || cls");
 
-    Edge edge;
-    int vertix;
-
     switch(option) {
         case 1: {
-            cout << "enter a edge vertix 1:";
-            cin >> edge.vertix1;
-            cout << "enter a edge vertix 2:";
-            cin >> edge.vertix2;
-            graph->removeEdge(edge);
+            cout << "enter a source edge vertex:";
+            cin >> source;
+            cout << "enter a destination edge vertex:";
+            cin >> destination;
+            start = system_clock::now();
+            graph->removeEdge(Edge(source, destination));
+            end = system_clock::now();
             break;
         }
         case 2: {
-            cout << "enter a edge vertix 1:";
-            cin >> edge.vertix1;
-            cout << "enter a edge vertix 2:";
-            cin >> edge.vertix2;
+            cout << "enter a source edge vertex:";
+            cin >> source;
+            cout << "enter a destination edge vertex:";
+            cin >> destination;
 
             try {
-                graph->addEdge(edge);
+                start = system_clock::now();
+                graph->addEdge(Edge(source, destination));
+                end = system_clock::now();
             } catch (exception e) {
                 cout << "failed to add seleced edge" << endl;
             }
             break;
         }
         case 3: {
-            cout << "enter a vertix to remove:";
-            cin >> vertix;
-            graph->removeVertix(vertix);
+            cout << "enter a vertex to remove:";
+            cin >> vertex;
+            start = system_clock::now();
+            graph->removeVertex(vertex);
+            end = system_clock::now();
             break;
         }
         case 4: { 
-            cout << "enter a vertix to add:";
-            cin >> vertix;
-            graph->addVertix(vertix);
+            cout << "enter a vertex to add:";
+            cin >> vertex;
+            start = system_clock::now();
+            graph->addVertex(vertex);
+            end = system_clock::now();
             break;
         }
         default:
             break;
     }
 
-    generateTextFile(*graph);
+    duration<double> elapsed_seconds = end - start;
+    cout << endl << "execution time: " << setprecision(5) << fixed << elapsed_seconds.count() << "s\n";
+
+    generateGraphTextFile(*graph);
     backMenu();
 }
 
-void verificationsMenu(Graph graph) {
+void verificationsMenu(Graph* graph) {
+    time_point<system_clock> start, end; // para marcar o tempo de execucao dos metodos
     int option;
-    int vertix;
+    int vertex;
 
     system("clear || cls");
     cout << "verifications:" << endl << endl;
     cout << "1 - number of vertices" << endl;
     cout << "2 - number of edges" << endl;
-    cout << "3 - degree of a vertix" << endl;
+    cout << "3 - degree of a vertex" << endl;
     cout << "4 - is the graph connected?" << endl;
-    cout << "5 - does the graph have cycles?" << endl;
-    cout << "6 - is the graph Eulerian?" << endl << endl;;
+    if (graph->isDirected()) cout << "5 - is the graph strongly connected?" << endl;
+    cout << "6 - does the graph have cycles?" << endl;
+    cout << "7 - is the graph Eulerian?" << endl << endl;;
     cout << "choose a option:";
     cin >> option;
     system("clear || cls");
 
+    start = system_clock::now();
     switch(option) {
-        case 1: 
-            cout << "num vertix: " << graph.getNumVertix() << endl;
-            break;
-        case 2: 
-            cout << "num edges: " << graph.getNumEdges() << endl;
-            break;
-        case 3: { 
-            cout << "enter a vertix: ";
-            cin >> vertix;
-            system("clear || cls");
-            cout << "degree of vertix " << vertix << ": " << graph.getVertixDegree(vertix) << endl;
+        case 1: {
+            cout << "num vertex: " << graph->getNumVertex() << endl;
             break;
         }
-        case 4: 
-            isConnected(graph) ? cout << "true" << endl : cout << "false" << endl;
+        case 2: {
+            cout << "num edges: " << graph->getNumEdges() << endl;
             break;
-        case 5: 
+        }
+        case 3: { 
+            cout << "enter a vertex: ";
+            cin >> vertex;
+            system("clear || cls");
+            cout << "degree of vertex " << vertex << ": " << graph->getVertexDegree(vertex) << endl;
             break;
-        case 6: 
+        }
+        case 4: {
+            graph->isConnected() ? cout << "true" << endl : cout << "false" << endl;
             break;
+        }
+        case 5: { 
+            if (graph->isDirected()) {
+                Digraph* digraph = dynamic_cast<Digraph*>(graph);
+                digraph->isStronglyConnected() ? cout << "true" << endl : cout << "false" << endl;
+            } else {
+                cout << "invalid function for type Graph, required type: Digraph" << endl;
+            }
+            break;
+        }
+        case 6: {
+            graph->haveCycle() ? cout << "true" << endl : cout << "false" << endl;
+            break;
+        }
+        case 7: {
+            int numOddVertexDegree = graph->getNumOddDegreeVertex();
+
+            cout  << "this graph is ";
+
+            switch(numOddVertexDegree) {
+                case 0:
+                    cout << "eulerian" << endl;
+                    break;
+                case 2:
+                    cout << "semi-eulerian" << endl;
+                    break;
+                default:
+                    cout << "non-eulerian" << endl;
+                    break;
+            }
+
+            break;
+        }
         default:
             break;
     }
+    end = system_clock::now();
+
+    duration<double> elapsed_seconds = end - start;
+    cout << endl << "execution time: " << setprecision(5) << fixed << elapsed_seconds.count() << "s\n";
 
     backMenu();
 }
