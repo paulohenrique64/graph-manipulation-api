@@ -16,12 +16,14 @@ class List {
         void insert(T element);
         void insertAt(int index, T element);
         void remove(T element);
+        T removeFirst();
         bool has(T element) const;
         int indexOf(T element) const;
         T& at(int index) const;
         int length() const;
         void printList() const;
         bool isEmpty();
+        void sort();
 
     private:
         T* list = nullptr;
@@ -90,6 +92,18 @@ void List<T>::remove(T element) {
     delete[] this->list;
     this->list = newList;
     this->numElements--;
+}
+
+template <typename T>
+T List<T>::removeFirst() {
+    exception e;
+
+    if (this->isEmpty())
+        throw e;
+
+    T element = this->list[0];
+    this->remove(element);
+    return element;
 }
 
 template <typename T>
@@ -181,4 +195,20 @@ ostream& operator<<(ostream& os, const List<T>& list) {
 template <typename T>
 bool List<T>::isEmpty() {
     return this->numElements == 0;
+}
+
+template <typename T>
+void List<T>::sort() {
+    T* list = this->list;
+    int length = this->numElements;
+
+    for (int i = 0; i < length; i++) {
+        for (int j = i + 1; j < length; j++) {
+            if (list[i] > list[j]) {
+                T aux = list[j];
+                list[j] = list[i];
+                list[i] = aux;
+            }
+        }
+    }
 }

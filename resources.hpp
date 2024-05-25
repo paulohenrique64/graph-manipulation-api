@@ -1,7 +1,7 @@
 #ifdef _WIN32
-    #define OPEN_IMAGE_COMMAND "(algum comando que funcione no windows) ./images/last.png"
+    #define OPEN_IMAGE_COMMAND "start ./images/last.png"
 #else
-    #define OPEN_IMAGE_COMMAND "xdg-open ./images/last.png > /dev/null 2>&1 &"
+    #define OPEN_IMAGE_COMMAND "xdg-open ./images/last.png > /dev/null &"
 #endif
 
 #pragma once
@@ -16,9 +16,8 @@
 using namespace std;
 
 Graph* generateGraphFromFile(string filePath, bool directGraph);
-void generateGraphDotFile(Graph graph);
-void generateGraphImage(string dotFilePath, string imagePath);
-void generateGraphTextFile(Graph graph);
+void generateGraphImage(Graph graph, string engine = "fdp");
+void generateGraphText(Graph graph);
 string generateGraphFileName(string extension, bool digraph);
 
 
@@ -98,7 +97,7 @@ Graph* generateGraphFromFile(string filePath, bool directGraph) {
     return newGraph;
 }
 
-void generateGraphDotFile(Graph graph) {
+void generateGraphImage(Graph graph, string engine) {
     List<int> vertexList = graph.getVertexList(), aloneVertexList = graph.getAloneVertexList();
     List<Edge> edgeList = graph.getEdgeList(), edgeListCopy = edgeList;
     string fileName = generateGraphFileName("dot", graph.isDirected());
@@ -128,12 +127,8 @@ void generateGraphDotFile(Graph graph) {
     string imagePath = "./images/" + generateGraphFileName("png", graph.isDirected());
     string dotFilePath = "./dot/" + fileName;
 
-    generateGraphImage(dotFilePath, imagePath);
-}
-
-void generateGraphImage(string dotFilePath, string imagePath) {
-    string command1 = "fdp -Tpng " + dotFilePath + " -o ./images/last.png && " + OPEN_IMAGE_COMMAND;
-    string command2 = "fdp -Tpng " + dotFilePath + " -o " + imagePath;
+    string command1 = engine + " -Tpng " + dotFilePath + " -o ./images/last.png && " + OPEN_IMAGE_COMMAND;
+    string command2 = engine + " -Tpng " + dotFilePath + " -o " + imagePath;
     
     system(command1.c_str());
     system(command2.c_str());
@@ -141,7 +136,7 @@ void generateGraphImage(string dotFilePath, string imagePath) {
     cout << "image created successfully" << endl;
 }
 
-void generateGraphTextFile(Graph graph) {
+void generateGraphText(Graph graph) {
     ofstream output1;
     ofstream output2;
     string buffer;
@@ -206,11 +201,11 @@ string generateGraphFileName(string extension, bool digraph) {
 
     if (ltm->tm_hour < 10) dateTime += "0";
     dateTime += to_string(ltm->tm_hour); // hora
-    dateTime += ":";
+    dateTime += "-";
 
     if (ltm->tm_min < 10) dateTime += "0";
     dateTime += to_string(ltm->tm_min); // minuto
-    dateTime += ":";
+    dateTime += "-";
 
     if (ltm->tm_sec < 10) dateTime += "0";
     dateTime += to_string(ltm->tm_sec); // segundo

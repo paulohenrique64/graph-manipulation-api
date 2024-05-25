@@ -36,6 +36,7 @@ class Edge {
 class Graph {
     public:
         Graph() = default;
+        Graph(List<int> vertexList); 
         Graph(List<int> vertexList, List<Edge> edgeList); 
         Graph(List<int> vertexList, List<Edge> edgeList, List<int> weightList);
         Graph(Graph& other); 
@@ -44,6 +45,7 @@ class Graph {
         virtual void addEdge(Edge edge);
         virtual bool isDirected();
         virtual bool isConnected(); 
+        bool isWeighted();
         void removeVertex(int vertex);
         void addVertex(int vertex);
         bool hasEdge(Edge edge);
@@ -64,6 +66,10 @@ class Graph {
         void printAdjacencyMatrix();
         void printAdjacencyList();
         void printFormatedData();
+        List<Graph> getDFSTree();
+        List<Graph> getBFSTree();
+        // Graph getKruskallTree();
+        // Graph getPrimTree();
 
     protected:
         List<Edge> edgeList;
@@ -74,6 +80,8 @@ class Graph {
         void updateAdjacencyList();
         void DFS(int vertex, Graph graph, List<bool>& visited);
         virtual bool DFSCycle(int vertex, Graph graph, List<bool>& visited);
+        void DFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited);
+        void BFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited, List<int>& queue);
 
     private:
         bool directGraph = false;
@@ -160,6 +168,9 @@ ostream& operator<<(ostream& os, const Edge& edge) {
     return os;
 }
 
+Graph::Graph(List<int> vertexList) {
+    this->vertexList = vertexList;
+}
 
 Graph::Graph(List<int> vertexList, List<Edge> edgeList) {
     this->vertexList = vertexList;
@@ -387,6 +398,13 @@ List<int> Graph::getVertexList() {
     return this->vertexList;
 }
 
+bool Graph::isWeighted() {
+    if (this->edgeList.isEmpty()) 
+        return false;
+
+    return this->edgeList.at(0).hasWeight();
+}
+
 bool Graph::isConnected() {
     Graph graph = *this;
     List<bool> visited;
@@ -482,4 +500,85 @@ bool Graph::DFSCycle(int vertex, Graph graph, List<bool>& visited) {
     }
            
     return false;
+}
+
+List<Graph> Graph::getDFSTree() {
+    Graph graph = *this;
+    List<bool> visited;
+    List<Graph> treeList;
+
+    for (int i = 0; i < graph.getNumVertex(); i++) 
+        visited.insert(false);
+
+    for (int i = 0; i < graph.getNumVertex(); i++) {
+        if (!visited.at(i)) {
+            Graph tree(graph.getVertexList());
+            this->DFSTree(graph.vertexAt(i), graph, tree, visited);
+            treeList.insert(tree);
+        }
+    } 
+
+    return treeList;
+}
+
+void Graph::DFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited) {
+    int vertexIndex = graph.indexOfVertex(vertex);
+    List<int> vertexList = graph.getAdjacencyList().at(vertexIndex);
+
+    visited.insertAt(vertexIndex, true);
+
+    for (int i = 0; i < vertexList.length(); i++) {
+        int adjVertex = vertexList.at(i);
+        int adjVertexIndex = graph.indexOfVertex(adjVertex);
+
+        if (!visited.at(adjVertexIndex)) {
+            tree.addEdge(Edge(vertex, adjVertex));
+            this->DFSTree(adjVertex, graph, tree, visited);
+        }
+    }
+}
+
+List<Graph> Graph::getBFSTree() {
+    Graph graph = *this;
+    List<bool> visited;
+    List<int> queue;
+    List<Graph> treeList;
+
+    for (int i = 0; i < graph.getNumVertex(); i++) 
+        visited.insert(false);
+
+    for (int i = 0; i < graph.getNumVertex(); i++) {
+        if (!visited.at(i)) {
+            Graph tree;
+            tree.addVertex(graph.vertexAt(i));
+            this->BFSTree(graph.vertexAt(i), graph, tree, visited, queue);
+            treeList.insert(tree);
+        }
+    } 
+
+    return treeList;
+}
+
+void Graph::BFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited, List<int>& queue) {
+    int vertexIndex = graph.indexOfVertex(vertex);
+    List<int> vertexList = graph.getAdjacencyList().at(vertexIndex);
+
+    visited.insertAt(vertexIndex, true);
+
+    for (int i = 0; i < vertexList.length(); i++) {
+        int adjVertex = vertexList.at(i), adjVertexIndex = graph.indexOfVertex(adjVertex);
+
+        if (!visited.at(adjVertexIndex)) {
+            tree.addVertex(adjVertex);
+            tree.addEdge(Edge(vertex, adjVertex));
+            visited.insertAt(adjVertexIndex, true);
+            queue.insert(adjVertex);
+        }
+    }
+
+    while (!queue.isEmpty()) {
+        int nextVisitVertex = queue.removeFirst();
+        int nextVisitVertexIndex = graph.indexOfVertex(nextVisitVertex);
+        this->BFSTree(nextVisitVertex, graph, tree, visited, queue);
+    }
 }

@@ -3,6 +3,7 @@
 #include <exception>
 #include <iomanip>
 #include <chrono>
+#include <thread>
 #include "graph.hpp"
 #include "digraph.hpp"
 #include "resources.hpp"
@@ -13,6 +14,7 @@ using namespace chrono;
 void removalsAndInsertionsMenu(Graph* graph);
 void representationsMenu(Graph graph);
 void verificationsMenu(Graph* graph);
+void treesMenu(Graph graph);
 void backMenu();
 
 
@@ -37,6 +39,7 @@ int main(int argc, char *argv[]) {
             cout << "1 - representations" << endl;
             cout << "2 - removals and insertions" << endl;
             cout << "3 - verifications" << endl;
+            cout << "4 - search and minimal trees" << endl;
             cout << "0 - quit" << endl << endl;
             cout << "choose a option:";
 
@@ -51,6 +54,9 @@ int main(int argc, char *argv[]) {
                     break;
                 case '3':
                     verificationsMenu(graph);
+                    break;
+                case '4':
+                    treesMenu(*graph);
                     break;
                 default:
                     option = '0';
@@ -91,7 +97,7 @@ void representationsMenu(Graph graph) {
             graph.printAdjacencyList();
             break;
         case 3: 
-            generateGraphDotFile(graph);
+            generateGraphImage(graph);
             break;
         case 4:
             graph.printFormatedData();
@@ -171,7 +177,7 @@ void removalsAndInsertionsMenu(Graph* graph) {
     duration<double> elapsed_seconds = end - start;
     cout << endl << "execution time: " << setprecision(5) << fixed << elapsed_seconds.count() << "s\n";
 
-    generateGraphTextFile(*graph);
+    generateGraphText(*graph);
     backMenu();
 }
 
@@ -250,6 +256,82 @@ void verificationsMenu(Graph* graph) {
             break;
     }
     end = system_clock::now();
+
+    duration<double> elapsed_seconds = end - start;
+    cout << endl << "execution time: " << setprecision(5) << fixed << elapsed_seconds.count() << "s\n";
+
+    backMenu();
+}
+
+void treesMenu(Graph graph) {
+    time_point<system_clock> start, end; // para marcar o tempo de execucao dos metodos
+    int option;
+
+    system("clear || cls");
+    cout << "trees:" << endl << endl;
+    cout << "1 - deep first search tree" << endl;
+    cout << "2 - breadth first search tree" << endl << endl;
+    cout << "choose a option:";
+    cin >> option;
+    system("clear || cls");
+
+    start = system_clock::now();
+    switch(option) {
+        case 1: {
+            List<Graph> treeList = graph.getDFSTree();
+            end = system_clock::now();
+
+            Graph unifiedTree;         
+            for (int i = 0; i < treeList.length(); i++) {
+                Graph tree = treeList.at(i);
+
+                for (int j = 0; j < tree.getNumVertex(); j++)
+                    unifiedTree.addVertex(tree.vertexAt(j));
+
+                for (int j = 0; j < tree.getNumEdges(); j++) 
+                    if (!unifiedTree.hasEdge(tree.edgeAt(j)))
+                        unifiedTree.addEdge(tree.edgeAt(j));
+            }
+
+            generateGraphImage(unifiedTree, "dot");
+            break;
+        }
+        case 2: {
+            List<Graph> treeList = graph.getBFSTree();
+            end = system_clock::now();
+
+            Graph unifiedTree;         
+            for (int i = 0; i < treeList.length(); i++) {
+                Graph tree = treeList.at(i);
+
+                for (int j = 0; j < tree.getNumVertex(); j++)
+                    unifiedTree.addVertex(tree.vertexAt(j));
+
+                for (int j = 0; j < tree.getNumEdges(); j++) 
+                    if (!unifiedTree.hasEdge(tree.edgeAt(j)))
+                        unifiedTree.addEdge(tree.edgeAt(j));
+            }
+
+            generateGraphImage(unifiedTree, "dot");
+            break;
+        }
+        case 3: {
+            // if (!graph.isWeighted()) 
+            //     cout << "the graph must be weighted for use this function" << endl;
+            // else 
+            //     generateGraphImage(graph.getKruskallTree());
+            break;
+        }
+        case 4: {
+            // if (!graph.isWeighted()) 
+            //     cout << "the graph must be weighted for use this function" << endl;
+            // else 
+            //     generateGraphImage(graph.getPrimTree());
+            break;
+        }
+        default:
+            break;
+    }
 
     duration<double> elapsed_seconds = end - start;
     cout << endl << "execution time: " << setprecision(5) << fixed << elapsed_seconds.count() << "s\n";

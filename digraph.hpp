@@ -53,8 +53,7 @@ void Digraph::addEdge(Edge edge) {
     if (!this->hasVertex(edge.getSource()) or !this->hasVertex(edge.getDestination())) 
         throw e;
     
-    this->edgeList.insert(edge);
-}
+    this->edgeList.insert(edge);}
 
 bool Digraph::isDirected() {
     return this->directGraph;
