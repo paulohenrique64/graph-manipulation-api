@@ -270,7 +270,9 @@ void treesMenu(Graph graph) {
     system("clear || cls");
     cout << "trees:" << endl << endl;
     cout << "1 - deep first search tree" << endl;
-    cout << "2 - breadth first search tree" << endl << endl;
+    cout << "2 - breadth first search tree" << endl;
+    cout << "3 - kruskall tree" << endl;
+    cout << "4 - prim tree" << endl << endl;
     cout << "choose a option:";
     cin >> option;
     system("clear || cls");
@@ -316,17 +318,19 @@ void treesMenu(Graph graph) {
             break;
         }
         case 3: {
-            // if (!graph.isWeighted()) 
-            //     cout << "the graph must be weighted for use this function" << endl;
-            // else 
-            //     generateGraphImage(graph.getKruskallTree());
+            if (!graph.isWeighted() or !graph.isConnected() or graph.isDirected()) 
+                cout << "the graph must be weighted, connected and non-directed for use this function" << endl;
+            else 
+                generateGraphImage(graph.getKruskalTree());
+                end = system_clock::now();
             break;
         }
         case 4: {
-            // if (!graph.isWeighted()) 
-            //     cout << "the graph must be weighted for use this function" << endl;
-            // else 
-            //     generateGraphImage(graph.getPrimTree());
+            if (!graph.isWeighted() or !graph.isConnected() or graph.isDirected()) 
+                cout << "the graph must be weighted, connected and non-directed for use this function" << endl;
+            else 
+                generateGraphImage(graph.getPrimTree());
+                end = system_clock::now();
             break;
         }
         default:

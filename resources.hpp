@@ -1,7 +1,9 @@
 #ifdef _WIN32
-    #define OPEN_IMAGE_COMMAND "start ./images/last.png"
+    #define OPEN_IMAGE_COMMAND "start"
+    #define OUTPUT_BUFFER "";
 #else
-    #define OPEN_IMAGE_COMMAND "xdg-open ./images/last.png > /dev/null &"
+    #define OPEN_IMAGE_COMMAND "xdg-open"
+    #define OUTPUT_BUFFER " > /dev/null 2> /dev/null &"
 #endif
 
 #pragma once
@@ -27,7 +29,6 @@ Graph* generateGraphFromFile(string filePath, bool directGraph) {
     Graph* newGraph = nullptr;
     List<int> vertexList;
     List<Edge> edgeList;
-    List<int> weightList;
 
     string stringBuffer;
     stringstream streamBuffer;
@@ -84,6 +85,8 @@ Graph* generateGraphFromFile(string filePath, bool directGraph) {
     }
 
     if (stringBuffer != " P = ") throw e;
+    List<int> weightList;
+
     getline(graphFile, stringBuffer, ';');
     streamBuffer.str(stringBuffer);
     do { 
@@ -92,30 +95,36 @@ Graph* generateGraphFromFile(string filePath, bool directGraph) {
             throw e;
         weightList.insert(weight);
     } while (trash != '}');
-    directGraph ? newGraph = new Digraph(vertexList, edgeList, weightList) : newGraph = new Graph(vertexList, edgeList, weightList); 
 
+    directGraph ? newGraph = new Digraph(vertexList, edgeList, weightList) : newGraph = new Graph(vertexList, edgeList, weightList); 
     return newGraph;
 }
 
 void generateGraphImage(Graph graph, string engine) {
     List<int> vertexList = graph.getVertexList(), aloneVertexList = graph.getAloneVertexList();
     List<Edge> edgeList = graph.getEdgeList(), edgeListCopy = edgeList;
-    string fileName = generateGraphFileName("dot", graph.isDirected());
 
+    string imageName = generateGraphFileName("png", graph.isDirected());
+    string fileName = generateGraphFileName("dot", graph.isDirected());
     ofstream output("./dot/" + fileName, ios::trunc);
+
     graph.isDirected() ? output << "digraph {" : output << "graph {";
 
     while (edgeListCopy.length() > 0) {
-        output << edgeListCopy.at(0).getSource();
-        graph.isDirected() ? output << " -> " : output << " -- ";
-        output << edgeListCopy.at(0).getDestination();
+        Edge next = edgeListCopy.removeFirst();
 
-        if (edgeListCopy.at(0).hasWeight())
-            output << "[label=\"" << edgeListCopy.at(0).getWeight() << "\"]";
+        output << next.getSource();
+        graph.isDirected() ? output << " -> " : output << " -- ";
+        output << next.getDestination();
+
+        if (next.hasWeight())
+            output << "[label=\"" << next.getWeight() << "\"]";
         output << ";";
 
-        if (!graph.isDirected()) edgeListCopy.remove(edgeListCopy.at(0).getReverse());
-        edgeListCopy.remove(edgeListCopy.at(0));
+        if (!graph.isDirected()) {
+            next.reverse();
+            edgeListCopy.remove(next);
+        }
     }
 
     for (int i = 0; i < aloneVertexList.length(); i++) 
@@ -124,11 +133,11 @@ void generateGraphImage(Graph graph, string engine) {
     output << "}";
     output.close();
 
-    string imagePath = "./images/" + generateGraphFileName("png", graph.isDirected());
+    string imagePath = "./images/" + imageName;
     string dotFilePath = "./dot/" + fileName;
 
-    string command1 = engine + " -Tpng " + dotFilePath + " -o ./images/last.png && " + OPEN_IMAGE_COMMAND;
-    string command2 = engine + " -Tpng " + dotFilePath + " -o " + imagePath;
+    string command1 = engine + " -Tpng " + dotFilePath + " -o ./images/last.png";
+    string command2 = engine + " -Tpng " + dotFilePath + " -o " + imagePath + " && " + OPEN_IMAGE_COMMAND + " " + imagePath + OUTPUT_BUFFER;
     
     system(command1.c_str());
     system(command2.c_str());

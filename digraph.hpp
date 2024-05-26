@@ -15,7 +15,7 @@ class Digraph : public Graph {
         bool isConnected(); 
         bool isStronglyConnected(); 
         bool haveCycle(); 
-        Digraph getReverse();
+        void reverse();
 
     private:
         bool directGraph = true;
@@ -64,8 +64,11 @@ bool Digraph::isConnected() {
 }
 
 bool Digraph::isStronglyConnected() {
-    Digraph digraph = *this, reverseDigraph = this->getReverse();
+    Digraph digraph = *this;
+    Digraph reverseDigraph = *this;
     List<bool> visited;
+
+    reverseDigraph.reverse();
 
     for (int i = 0; i < digraph.getNumVertex(); i++) 
         visited.insert(false);
@@ -88,14 +91,9 @@ bool Digraph::isStronglyConnected() {
     return true;
 }
 
-Digraph Digraph::getReverse() {
-    List<int> vertexList = this->vertexList;
-    List<Edge> edgeList = this->edgeList;
-    
-    for (int i = 0; i < edgeList.length(); i++) 
-        edgeList.insertAt(i, edgeList.at(i).getReverse());
-
-    return Digraph(vertexList, edgeList);;
+void Digraph::reverse() {  
+    for (int i = 0; i < this->edgeList.length(); i++) 
+        edgeList.at(i).reverse();
 }
 
 bool Digraph::haveCycle() {

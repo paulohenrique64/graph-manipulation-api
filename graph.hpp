@@ -13,7 +13,7 @@ class Edge {
         Edge() = default;
         Edge(int source, int destination);
         Edge(int source, int destination, int weight);
-        Edge getReverse() const;
+        void reverse();
         int getWeight() const;
         int getSource() const;
         int getDestination() const;
@@ -22,7 +22,9 @@ class Edge {
         void setDestination(int weight);
         bool hasWeight() const;
         bool operator==(const Edge& other);
-        bool operator!=(const Edge& other);                        
+        bool operator!=(const Edge& other);      
+        bool operator<(const Edge& other);   
+        bool operator>(const Edge& other);                     
         Edge& operator=(const Edge& other);
         friend ostream& operator<<(ostream& os, const Edge& edge);
 
@@ -68,8 +70,8 @@ class Graph {
         void printFormatedData();
         List<Graph> getDFSTree();
         List<Graph> getBFSTree();
-        // Graph getKruskallTree();
-        // Graph getPrimTree();
+        Graph getKruskalTree();
+        Graph getPrimTree();
 
     protected:
         List<Edge> edgeList;
@@ -82,6 +84,7 @@ class Graph {
         virtual bool DFSCycle(int vertex, Graph graph, List<bool>& visited);
         void DFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited);
         void BFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited, List<int>& queue);
+        void removeMultipleEdges(List<Edge>& edgeList);
 
     private:
         bool directGraph = false;
@@ -130,27 +133,54 @@ int Edge::getWeight() const {
     return -4564565;
 }
 
-Edge Edge::getReverse() const {
-    Edge reverseEdge(this->destination, this->source);
-
-    if (this->weight != nullptr)
-        reverseEdge.setWeight(*this->weight);
-
-    return reverseEdge;
+void Edge::reverse() {
+    int aux = this->destination;
+    this->destination = this->source;
+    this->source = aux;
 }
 
 bool Edge::operator==(const Edge& other) {
-    return (this->source == other.source && this->destination == other.destination);
+    bool equal = true;
+
+    if (this->source != other.source or this->destination != other.destination)
+        equal = false;
+    
+    if (other.hasWeight() and this->hasWeight() and other.getWeight() != this->getWeight())
+        equal = false;
+
+    return equal;
 }
 
 bool Edge::operator!=(const Edge& other) {
-    return (this->source != other.source or this->destination != other.destination);
+    bool diff = true;
+
+    if (this->source == other.source and this->destination == other.destination)
+        diff = false;
+    
+    if (other.hasWeight() and this->hasWeight() and other.getWeight() == this->getWeight())
+        diff = false;
+
+    return diff;
 }
+
+bool Edge::operator<(const Edge& other) {
+    if (!other.hasWeight() or !this->hasWeight()) 
+        return false;
+
+    return this->getWeight() < other.getWeight();
+}  
+
+bool Edge::operator>(const Edge& other) {
+    if (!other.hasWeight() or !this->hasWeight()) 
+        return false;
+
+    return this->getWeight() > other.getWeight();
+} 
                                 
 Edge& Edge::operator=(const Edge& other) { 
     if (this != &other) {
-        this->source = other.source;
-        this->destination = other.destination;
+        this->source = other.getSource();
+        this->destination = other.getDestination();
 
         if (other.hasWeight())
             this->setWeight(other.getWeight());
@@ -336,7 +366,8 @@ bool Graph::hasEdge(Edge edge) {
 
 void Graph::removeEdge(Edge edge) {
     this->edgeList.remove(edge);
-    this->edgeList.remove(edge.getReverse());
+    edge.reverse();
+    this->edgeList.remove(edge);
 }
 
 void Graph::addEdge(Edge edge) {
@@ -346,7 +377,8 @@ void Graph::addEdge(Edge edge) {
         throw e;
 
     this->edgeList.insert(edge);
-    this->edgeList.insert(edge.getReverse());
+    edge.reverse();
+    this->edgeList.insert(edge);
 }
 
 void Graph::addVertex(int vertex) {
@@ -581,4 +613,69 @@ void Graph::BFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited, L
         int nextVisitVertexIndex = graph.indexOfVertex(nextVisitVertex);
         this->BFSTree(nextVisitVertex, graph, tree, visited, queue);
     }
+}
+
+Graph Graph::getKruskalTree() {
+    Graph kruskal(this->vertexList);
+    List<Edge> edgeList = this->edgeList;
+
+    this->removeMultipleEdges(edgeList);
+    edgeList.sort();
+    
+    while (!edgeList.isEmpty()) {
+        Edge next = edgeList.removeFirst();
+        kruskal.addEdge(next);
+
+        if (kruskal.haveCycle())
+            kruskal.removeEdge(next);
+    }
+
+    return kruskal;
+}
+
+Graph Graph::getPrimTree() {
+    List<int> vertexList = this->vertexList;
+    List<Edge> edgeList = this->edgeList;
+    List<Edge> edgePrimList;
+    int neededEdges = vertexList.length() - 1;
+
+    this->removeMultipleEdges(edgeList);
+    edgeList.sort();
+
+    for (int i = 0; i < neededEdges; i++) 
+        edgePrimList.insert(edgeList.at(i));
+
+    return Graph(vertexList, edgePrimList);
+}
+
+// remove edge cicle
+// remove reverse edges
+// remove multiple edges
+void Graph::removeMultipleEdges(List<Edge>& edgeList) {
+    List<Edge> newEdgeList;
+
+    for (int i = 0; i < edgeList.length(); i++) {
+        Edge edge = edgeList.at(i);
+        Edge reverse(edge.getDestination(), edge.getSource());
+        bool exist;
+
+        if (!newEdgeList.has(reverse) and edge.getSource() != edge.getDestination()) {
+            exist = false;
+
+            for (int j = 0; j < newEdgeList.length(); j++) {
+                Edge search = newEdgeList.at(j);
+
+                if (edge.getSource() == search.getSource() and edge.getDestination() == search.getDestination()) {
+                    if (edge.getWeight() < search.getWeight()) 
+                        newEdgeList.insertAt(j, edge);
+                    exist = true;
+                } 
+            }
+
+            if (!exist)
+                newEdgeList.insert(edge);
+        }
+    }
+
+    edgeList = newEdgeList;
 }
