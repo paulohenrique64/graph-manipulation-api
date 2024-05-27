@@ -7,6 +7,7 @@
 class Digraph : public Graph {
     public:
         Digraph() = default;
+        Digraph(List<int> vertexList);
         Digraph(List<int> vertexList, List<Edge> edgeList);
         Digraph(List<int> vertexList, List<Edge> edgeList, List<int> weightList);
         void removeEdge(Edge edge);
@@ -17,10 +18,19 @@ class Digraph : public Graph {
         bool haveCycle(); 
         void reverse();
 
+        List<int> getKahnTopologicalSort(); 
+        List<int> getDFSTopologicalSort(); 
+        // List<Graph> getKosarajuComponents();
+
     private:
         bool directGraph = true;
         bool DFSCycle(int vertex, Digraph digraph, List<bool>& visited, List<bool>& recStack);
+        void DFSTopologicalSort(int vertex, Digraph digraph, List<bool>& visited, List<int>& topList);
 };
+
+Digraph::Digraph(List<int> vertexList) {
+    this->vertexList = vertexList;
+}
 
 Digraph::Digraph(List<int> vertexList, List<Edge> edgeList) {
     this->vertexList = vertexList;
@@ -140,5 +150,61 @@ bool Digraph::DFSCycle(int vertex, Digraph digraph, List<bool>& visited, List<bo
 
     return false;
 }
+
+List<int> Digraph::getKahnTopologicalSort() {
+    List<int> topList;
+    Digraph digraph = *this;
+
+    while (digraph.getNumVertex() > 0) {
+        for (int i = 0; i < digraph.getNumVertex(); i++) {
+            int vertex = digraph.vertexAt(i);
+
+            if (digraph.getVertexDegree(vertex) == 0) {
+                digraph.removeVertex(vertex);
+                topList.insert(vertex);
+            }
+        }
+    }
+    
+    return topList;
+}
+
+List<int> Digraph::getDFSTopologicalSort() {
+    Digraph digraph = *this;
+    List<bool> visited;
+    List<int> topList;
+
+    for (int i = 0; i < digraph.getNumVertex(); i++) 
+        visited.insert(false);
+    
+    for (int i = 0; i < digraph.getNumVertex(); i++)
+        if (!visited.at(digraph.indexOfVertex(digraph.vertexAt(i)))) 
+            this->DFSTopologicalSort(digraph.vertexAt(i), digraph, visited, topList);
+
+    topList.reverse();
+
+    return topList;
+}
+
+void Digraph::DFSTopologicalSort(int vertex, Digraph digraph, List<bool>& visited, List<int>& topList) {
+    int vertexIndex = digraph.indexOfVertex(vertex);
+    List<int> vertexList = digraph.getAdjacencyList().at(vertexIndex);
+
+    visited.insertAt(vertexIndex, true);
+
+    for (int i = 0; i < vertexList.length(); i++) {
+        int adjVertex = vertexList.at(i);
+        int adjVertexIndex = digraph.indexOfVertex(adjVertex);
+
+        if (!visited.at(adjVertexIndex)) 
+            this->DFSTopologicalSort(adjVertex, digraph, visited, topList);
+    }
+
+    topList.insert(vertex);
+}
+
+// List<Graph> Digraph::getKosarajuComponents() {
+//  
+// }
 
 

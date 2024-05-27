@@ -18,7 +18,7 @@
 using namespace std;
 
 Graph* generateGraphFromFile(string filePath, bool directGraph);
-void generateGraphImage(Graph graph, string engine = "fdp");
+void generateGraphImage(Graph graph, string engine = "fdp", string title = "");
 void generateGraphText(Graph graph);
 string generateGraphFileName(string extension, bool digraph);
 
@@ -100,7 +100,7 @@ Graph* generateGraphFromFile(string filePath, bool directGraph) {
     return newGraph;
 }
 
-void generateGraphImage(Graph graph, string engine) {
+void generateGraphImage(Graph graph, string engine, string title) {
     List<int> vertexList = graph.getVertexList(), aloneVertexList = graph.getAloneVertexList();
     List<Edge> edgeList = graph.getEdgeList(), edgeListCopy = edgeList;
 
@@ -109,7 +109,8 @@ void generateGraphImage(Graph graph, string engine) {
     ofstream output("./dot/" + fileName, ios::trunc);
 
     graph.isDirected() ? output << "digraph {" : output << "graph {";
-
+    output << "label=\""+ title + "\"\nlabelloc = t;sep=\"0.8\";";
+    
     while (edgeListCopy.length() > 0) {
         Edge next = edgeListCopy.removeFirst();
 

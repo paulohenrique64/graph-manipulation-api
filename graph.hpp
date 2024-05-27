@@ -41,8 +41,10 @@ class Graph {
         Graph(List<int> vertexList); 
         Graph(List<int> vertexList, List<Edge> edgeList); 
         Graph(List<int> vertexList, List<Edge> edgeList, List<int> weightList);
-        Graph(Graph& other); 
+        Graph(Graph& other);
+        Graph(Graph&& other); 
         Graph& operator=(Graph& other); 
+        Graph& operator=(Graph&& other); 
         virtual void removeEdge(Edge edge);
         virtual void addEdge(Edge edge);
         virtual bool isDirected();
@@ -231,11 +233,29 @@ Graph::Graph(Graph& other) {
     }
 }
 
+Graph::Graph(Graph&& other) {
+    if (this != &other)  {
+        this->directGraph = other.directGraph;
+        this->vertexList = other.vertexList;
+        this->edgeList = other.edgeList;   
+    }
+}
+
 Graph& Graph::operator=(Graph& other) {
     if (this != &other)  {
         this->directGraph = other.isDirected();
         this->vertexList = other.getVertexList();
         this->edgeList = other.getEdgeList();  
+    }
+
+    return *this;
+}
+
+Graph&  Graph::operator=(Graph&& other) {
+    if (this != &other)  {
+        this->directGraph = other.directGraph;
+        this->vertexList = other.vertexList;
+        this->edgeList = other.edgeList;  
     }
 
     return *this;
@@ -645,7 +665,9 @@ Graph Graph::getPrimTree() {
     for (int i = 0; i < neededEdges; i++) 
         edgePrimList.insert(edgeList.at(i));
 
-    return Graph(vertexList, edgePrimList);
+    Graph prim(vertexList, edgePrimList);
+
+    return prim;
 }
 
 // remove edge cicle

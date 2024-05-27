@@ -24,6 +24,7 @@ class List {
         void printList() const;
         bool isEmpty();
         void sort();
+        void reverse();
 
     private:
         T* list = nullptr;
@@ -212,3 +213,14 @@ void List<T>::sort() {
         }
     }
 }
+
+template <typename T>
+void List<T>::reverse() {
+    int j = this->numElements - 1;
+    for (int i = 0; i < this->numElements / 2; i++) {
+        T aux = this->list[i];
+        this->list[i] = this->list[j];
+        this->list[j--] = aux;
+    }
+}
+ 
