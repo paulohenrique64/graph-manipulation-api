@@ -53,6 +53,7 @@ class Graph {
         void removeVertex(int vertex);
         void addVertex(int vertex);
         bool hasEdge(Edge edge);
+        Edge getEdge(int source, int destination);
         bool hasVertex(int vertex);
         int getNumVertex();
         int vertexAt(int index);
@@ -86,7 +87,6 @@ class Graph {
         virtual bool DFSCycle(int vertex, Graph graph, List<bool>& visited);
         void DFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited);
         void BFSTree(int vertex, Graph graph, Graph& tree, List<bool>& visited, List<int>& queue);
-        void removeMultipleEdges(List<Edge>& edgeList);
 
     private:
         bool directGraph = false;
@@ -501,6 +501,16 @@ int Graph::getNumOddDegreeVertex() {
     return count;
 }
 
+Edge Graph::getEdge(int source, int destination) {
+    for (int i = 0; i < this->edgeList.length(); i++) {
+        Edge edge = this->edgeList.at(i);
+        if (edge.getSource() == source and edge.getDestination() == destination) 
+            return edge;
+    }
+
+    throw runtime_error("this edge does not exists");
+}
+
 List<int> Graph::getAloneVertexList() {
     List<int> vertexList = this->vertexList;
     List<Edge> edgeList = this->edgeList;
@@ -639,7 +649,6 @@ Graph Graph::getKruskalTree() {
     Graph kruskal(this->vertexList);
     List<Edge> edgeList = this->edgeList;
 
-    this->removeMultipleEdges(edgeList);
     edgeList.sort();
     
     while (!edgeList.isEmpty()) {
@@ -654,50 +663,53 @@ Graph Graph::getKruskalTree() {
 }
 
 Graph Graph::getPrimTree() {
+    List<List<int>> adjacencyList = this->getAdjacencyList();
     List<int> vertexList = this->vertexList;
-    List<Edge> edgeList = this->edgeList;
-    List<Edge> edgePrimList;
-    int neededEdges = vertexList.length() - 1;
+    List<int> queue = this->vertexList;
+    int key[vertexList.length()];
+    int parents[vertexList.length()];
+    int u, v;
 
-    this->removeMultipleEdges(edgeList);
-    edgeList.sort();
-
-    for (int i = 0; i < neededEdges; i++) 
-        edgePrimList.insert(edgeList.at(i));
-
-    Graph prim(vertexList, edgePrimList);
-
-    return prim;
-}
-
-// remove edge cicle
-// remove reverse edges
-// remove multiple edges
-void Graph::removeMultipleEdges(List<Edge>& edgeList) {
-    List<Edge> newEdgeList;
-
-    for (int i = 0; i < edgeList.length(); i++) {
-        Edge edge = edgeList.at(i);
-        Edge reverse(edge.getDestination(), edge.getSource());
-        bool exist;
-
-        if (!newEdgeList.has(reverse) and edge.getSource() != edge.getDestination()) {
-            exist = false;
-
-            for (int j = 0; j < newEdgeList.length(); j++) {
-                Edge search = newEdgeList.at(j);
-
-                if (edge.getSource() == search.getSource() and edge.getDestination() == search.getDestination()) {
-                    if (edge.getWeight() < search.getWeight()) 
-                        newEdgeList.insertAt(j, edge);
-                    exist = true;
-                } 
-            }
-
-            if (!exist)
-                newEdgeList.insert(edge);
-        }
+    for (int i = 0; i < vertexList.length(); i++) {
+        key[i] = 9999999;
+        parents[i] = -1;
     }
 
-    edgeList = newEdgeList;
+    key[0] = 0;
+
+    while (!queue.isEmpty()) {
+        int minKeyIndex = 0;
+
+        for (int i = 0; i < queue.length(); i++) {
+            int index = vertexList.indexOf(queue.at(i));
+
+            if (key[index] < key[vertexList.indexOf(queue.at(minKeyIndex))]) 
+                minKeyIndex = i;
+        }
+
+        u = queue.at(minKeyIndex);
+        queue.remove(u);
+
+        List<int> adj = adjacencyList.at(vertexList.indexOf(u));
+
+        for (int i = 0; i < adj.length(); i++) {
+            v = adj.at(i);
+            int vIndex = vertexList.indexOf(v);
+            Edge edge = this->getEdge(u, v);
+            int weight = edge.getWeight();
+
+            if (queue.has(v) and weight < key[vIndex]) {
+                parents[vIndex] = u;
+                key[vIndex] = weight;
+            }
+        }   
+    }
+
+    Graph prim(vertexList);
+
+    for (int i = 0; i < vertexList.length(); i++) 
+        if (parents[i] != -1) 
+            prim.addEdge(Edge(parents[i], vertexList.at(i), key[i]));
+
+    return prim;
 }

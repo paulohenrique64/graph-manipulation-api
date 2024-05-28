@@ -1,0 +1,2 @@
+digraph {label="one of ways for topological sort"
+labelloc = t;sep="0.8";5 -> 4;4 -> 6;6 -> 2;2 -> 3;3 -> 1;}

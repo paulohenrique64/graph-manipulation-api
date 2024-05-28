@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
         return 3;
     } 
 
-    cout << "exiting...";
+    cout << "exiting..." << endl;
     return 0;
 }
 
