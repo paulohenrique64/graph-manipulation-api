@@ -17,90 +17,107 @@
 
 using namespace std;
 
+const int numColors = 20;
+const string colors[numColors] = {
+    "#33a8c7","#a0e426","#9336fd","#fdf148","#ffab00",
+    "#f77976","#f77976","#f050ae","#f050ae","#d883ff",
+    "#52e3e1","#52e3e1","#00f5d4","#00bbf9","#f15bb50",
+    "#9b5de5","#00bbf9","#00f5d4","#00bbf9","#f15bb50"
+};
+
 Graph* generateGraphFromFile(string filePath, bool directGraph);
-void generateGraphImage(Graph graph, string engine = "fdp", string title = "");
+void generateGraphImage(Graph graph, string engine = "fdp", string title = "", List<List<int>>* components = nullptr);
 void generateGraphText(Graph graph);
 string generateGraphFileName(string extension, bool digraph);
 
-
 Graph* generateGraphFromFile(string filePath, bool directGraph) {
-    ifstream graphFile;
+    ifstream file;
     exception e;
-    Graph* newGraph = nullptr;
+    Graph* graph = nullptr;
     List<int> vertexList;
     List<Edge> edgeList;
 
-    string stringBuffer;
-    stringstream streamBuffer;
+    string s;
+    stringstream buffer;
     int vertex, source, destination, weight;
     char trash;
 
-    graphFile.exceptions(ifstream::failbit | ifstream::badbit);
+    file.exceptions(ifstream::failbit | ifstream::badbit);
 
     try {
-        graphFile.open(filePath);
+        file.open(filePath);
     } catch (ifstream::failure fileError) {
         throw fileError;
     }
 
-
     // "V = {x,y};"
-    getline(graphFile, stringBuffer, '{');
-    if (stringBuffer != "V = ") throw e;
-    getline(graphFile, stringBuffer, ';');
-    streamBuffer.str(stringBuffer);
+    getline(file, s, '{');
+    if (s != "V = ") throw e;
+    getline(file, s, ';');
+    buffer.str(s);
 
     do { 
-        streamBuffer >> vertex >> trash; 
-        if (streamBuffer.fail() or (trash != ',' && trash != '}')) throw e;
+        buffer >> vertex >> trash; 
+        if (buffer.fail() or (trash != ',' && trash != '}')) throw e;
         vertexList.insert(vertex);
     } while (trash != '}');
 
 
     // "A = {x,y};" ou "A = {(x,y),(w,x),(y,z)};" ou "A = {};"
-    getline(graphFile, stringBuffer, '{');
-    if (stringBuffer != " A = ") throw e;
-    getline(graphFile, stringBuffer, ';');
-    streamBuffer.str(stringBuffer);
+    getline(file, s, '{');
+    if (s != " A = ") throw e;
+    getline(file, s, ';');
+    buffer.str(s);
 
-    if (stringBuffer.length() == 4) { 
-        streamBuffer >> source >> trash >> destination;
-        if (streamBuffer.fail()) throw e;
+    if (s.length() == 4) { 
+        buffer >> source >> trash >> destination;
+        if (buffer.fail()) throw e;
         edgeList.insert(Edge(source, destination));
-    } else if (stringBuffer.length() > 4) {
+    } else if (s.length() > 4) {
         do { 
-            streamBuffer >> trash >> source >> trash >> destination >> trash >> trash;
-            if (streamBuffer.fail()) throw e;
+            buffer >> trash >> source >> trash >> destination >> trash >> trash;
+            if (buffer.fail()) throw e;
             edgeList.insert(Edge(source, destination));
         } while (trash != '}');
     }
 
-
     // "P = {10,20,30,40,50}; se existir"
-    try {
-        getline(graphFile, stringBuffer, '{');
+    try {   
+        getline(file, s, '{');
     } catch (exception e) {
-        directGraph ? newGraph = new Digraph(vertexList, edgeList) : newGraph = new Graph(vertexList, edgeList);  
-        return newGraph;
+        file.close();
+        directGraph ? graph = new Digraph(vertexList, edgeList) : graph = new Graph(vertexList, edgeList);   
+        return graph; 
     }
 
-    if (stringBuffer != " P = ") throw e;
-    List<int> weightList;
+    string cp;
+    for (int i = 0; i < s.length(); i++) 
+        if (s[i] != ' ') cp += s[i];
+    
+    if (cp.length() == 0) {
+        file.close();
+        directGraph ? graph = new Digraph(vertexList, edgeList) : graph = new Graph(vertexList, edgeList);   
+        return graph; 
+    }
 
-    getline(graphFile, stringBuffer, ';');
-    streamBuffer.str(stringBuffer);
+    if (s != " P = ") throw e;
+    List<int> weightList;
+    getline(file, s, ';');
+    buffer.str(s);
+
     do { 
-        streamBuffer >> weight >> trash;
-        if (streamBuffer.fail() or (trash != ',' && trash != '}')) 
+        buffer >> weight >> trash;
+        if (buffer.fail() or (trash != ',' && trash != '}')) 
             throw e;
         weightList.insert(weight);
     } while (trash != '}');
 
-    directGraph ? newGraph = new Digraph(vertexList, edgeList, weightList) : newGraph = new Graph(vertexList, edgeList, weightList); 
-    return newGraph;
+    file.close();
+    directGraph ? graph = new Digraph(vertexList, edgeList, weightList) : graph = new Graph(vertexList, edgeList, weightList); 
+    return graph;
 }
 
-void generateGraphImage(Graph graph, string engine, string title) {
+void generateGraphImage(Graph graph, string engine, string title, List<List<int>>* components) {
     List<int> vertexList = graph.getVertexList(), aloneVertexList = graph.getAloneVertexList();
     List<Edge> edgeList = graph.getEdgeList(), edgeListCopy = edgeList;
 
@@ -110,6 +127,23 @@ void generateGraphImage(Graph graph, string engine, string title) {
 
     graph.isDirected() ? output << "digraph {" : output << "graph {";
     output << "label=\""+ title + "\"\nlabelloc = t;sep=\"0.8\";";
+
+    // components (if exists)
+    if (components != nullptr) {
+        int numComponents = components->length();
+
+        if (numComponents > numColors) {
+            cout << "there are not enough colors to print the graph" << endl;
+            return;
+        }
+
+        for (int i = 0; i < numComponents; i++) {
+            List<int> component = components->at(i);
+
+            for (int j = 0; j < component.length(); j++)
+                output << component.at(j) <<" [fillcolor=\"" << colors[i] << "\" style=filled];";
+        }
+    }
     
     while (edgeListCopy.length() > 0) {
         Edge next = edgeListCopy.removeFirst();
@@ -225,4 +259,52 @@ string generateGraphFileName(string extension, bool digraph) {
     fileName += extension;
 
     return fileName;
+}
+
+void generateGraphSCCImage(Graph graph, List<List<int>> components, string engine, string title) {
+    List<int> vertexList = graph.getVertexList(), aloneVertexList = graph.getAloneVertexList();
+    List<Edge> edgeList = graph.getEdgeList(), edgeListCopy = edgeList;
+
+    string imageName = generateGraphFileName("png", graph.isDirected());
+    string fileName = generateGraphFileName("dot", graph.isDirected());
+    ofstream output("./dot/" + fileName, ios::trunc);
+
+    graph.isDirected() ? output << "digraph {" : output << "graph {";
+    output << "label=\""+ title + "\"\nlabelloc = t;sep=\"0.8\";";
+
+
+
+    while (edgeListCopy.length() > 0) {
+        Edge next = edgeListCopy.removeFirst();
+
+        output << next.getSource();
+        graph.isDirected() ? output << " -> " : output << " -- ";
+        output << next.getDestination();
+
+        if (next.hasWeight())
+            output << "[label=\"" << next.getWeight() << "\"]";
+        output << ";";
+
+        if (!graph.isDirected()) {
+            next.reverse();
+            edgeListCopy.remove(next);
+        }
+    }
+
+    for (int i = 0; i < aloneVertexList.length(); i++) 
+        output << aloneVertexList.at(i) << ";";
+    
+    output << "}";
+    output.close();
+
+    string imagePath = "./images/" + imageName;
+    string dotFilePath = "./dot/" + fileName;
+
+    string command1 = engine + " -Tpng " + dotFilePath + " -o ./images/last.png";
+    string command2 = engine + " -Tpng " + dotFilePath + " -o " + imagePath + " && " + OPEN_IMAGE_COMMAND + " " + imagePath + OUTPUT_BUFFER;
+    
+    system(command1.c_str());
+    system(command2.c_str());
+
+    cout << "image created successfully" << endl;
 }

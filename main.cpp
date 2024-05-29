@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
         do {
             system("clear || cls");
-            cout << "menu" << endl << endl;
+            cout << "Graph Manipulator" << endl << endl;
             cout << "1 - representations" << endl;
             cout << "2 - removals and insertions" << endl;
             cout << "3 - verifications" << endl;
@@ -378,6 +378,14 @@ void algorithmsMenu(Graph* graph) {
             break;
         }
         case 3: {
+            List<List<int>> components = digraph->getKosarajuComponents();
+            end = system_clock::now();
+
+            for (int i = 0; i < components.length(); i++) {
+                components.at(i).printList();
+            }
+
+            generateGraphImage(*digraph, "fdp", "strongly components", &components);
             break;
         }
         default:
