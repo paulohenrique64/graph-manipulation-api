@@ -10,11 +10,11 @@ class Digraph : public Graph {
         Digraph(List<int> vertexList);
         Digraph(List<int> vertexList, List<Edge> edgeList);
         Digraph(List<int> vertexList, List<Edge> edgeList, List<int> weightList);
-        void removeEdge(Edge edge);
         void addEdge(Edge edge);
-        bool isDirected();
-        bool isConnected(); 
-        bool isStronglyConnected(); 
+        void removeEdge(Edge edge);
+        bool directed(); 
+        bool connected();
+        bool stronglyConnected(); 
         bool haveCycle(); 
         void transpose();
         List<int> getKahnTopologicalSort(); 
@@ -25,7 +25,6 @@ class Digraph : public Graph {
         bool directGraph = true;
         bool DFSCycle(int vertex, Digraph digraph, bool* visited, bool* recStack);
         void DFSTopologicalSort(int vertex, Digraph digraph, bool* visited, List<int>& topList);
-        void DFSRecStack(int vertex, Digraph digraph, bool* visited, List<int>& recStack);
 };
 
 Digraph::Digraph(List<int> vertexList) {
@@ -35,21 +34,21 @@ Digraph::Digraph(List<int> vertexList) {
 Digraph::Digraph(List<int> vertexList, List<Edge> edgeList) {
     this->vertexList = vertexList;
 
-    for (int i = 0; i < edgeList.length(); i++) 
-        this->addEdge(edgeList.at(i));
+    for (int i = 0; i < edgeList.size(); i++) 
+        this->addEdge(edgeList[i]);
 }
 
 Digraph::Digraph(List<int> vertexList, List<Edge> edgeList, List<int> weightList) {
     exception e;
 
-    if (weightList.length() != edgeList.length()) 
+    if (weightList.size() != edgeList.size()) 
         throw e;
     
     this->vertexList = vertexList;
 
-    for (int i = 0; i < edgeList.length(); i++) {
-        edgeList.at(i).setWeight(weightList.at(i));
-        this->addEdge(edgeList.at(i));
+    for (int i = 0; i < edgeList.size(); i++) {
+        edgeList[i].setWeight(weightList[i]);
+        this->addEdge(edgeList[i]);
     }
 }
 
@@ -65,15 +64,15 @@ void Digraph::addEdge(Edge edge) {
     
     this->edgeList.insert(edge);}
 
-bool Digraph::isDirected() {
+bool Digraph::directed() {
     return this->directGraph;
 }
 
-bool Digraph::isConnected() {
-    return Graph(this->vertexList, this->edgeList).isConnected();
+bool Digraph::connected() {
+    return Graph(this->vertexList, this->edgeList).connected();
 }
 
-bool Digraph::isStronglyConnected() {
+bool Digraph::stronglyConnected() {
     Digraph digraph = *this;
     int numVertex = digraph.getNumVertex();
     int initialVertex = digraph.vertexAt(0);
@@ -103,8 +102,8 @@ bool Digraph::isStronglyConnected() {
 }
 
 void Digraph::transpose() {  
-    for (int i = 0; i < this->edgeList.length(); i++) 
-        edgeList.at(i).reverse();
+    for (int i = 0; i < this->edgeList.size(); i++) 
+        edgeList[i].reverse();
 }
 
 bool Digraph::haveCycle() {
@@ -122,7 +121,7 @@ bool Digraph::haveCycle() {
         int vertex = digraph.vertexAt(i);
 
         if (!visited[i]) 
-            if (this->DFSCycle(digraph.vertexAt(i), digraph, visited, recStack)) 
+            if (this->DFSCycle(vertex, digraph, visited, recStack)) 
                 return true;
     }
   
@@ -130,16 +129,16 @@ bool Digraph::haveCycle() {
 }
 
 bool Digraph::DFSCycle(int vertex, Digraph digraph, bool* visited, bool* recStack) {
-    int vertexIndex = digraph.indexOfVertex(vertex);
+    int vertexIndex = digraph.getVertexIndex(vertex);
 
-    List<int> adjVertexList = digraph.getAdjacencyList().at(vertexIndex);
+    List<int> adjVertexList = digraph.getAdjacencyList()[vertexIndex];
 
     visited[vertexIndex] = true;
     recStack[vertexIndex] = true;
 
-    for (int i = 0; i < adjVertexList.length(); i++) {
-        int adjVertex = adjVertexList.at(i);
-        int adjVertexIndex = digraph.indexOfVertex(adjVertex);
+    for (int i = 0; i < adjVertexList.size(); i++) {
+        int adjVertex = adjVertexList[i];
+        int adjVertexIndex = digraph.getVertexIndex(adjVertex);
 
         if (!visited[adjVertexIndex]) {
             if (this->DFSCycle(adjVertex, digraph, visited, recStack)) 
@@ -194,14 +193,14 @@ List<int> Digraph::getDFSTopologicalSort() {
 }
 
 void Digraph::DFSTopologicalSort(int vertex, Digraph digraph, bool* visited, List<int>& topList) {
-    int vertexIndex = digraph.indexOfVertex(vertex);
+    int vertexIndex = digraph.getVertexIndex(vertex);
 
-    List<int> vertexList = digraph.getAdjacencyList().at(vertexIndex);
+    List<int> vertexList = digraph.getAdjacencyList()[vertexIndex];
 
     visited[vertexIndex] = true;
 
-    for (int i = 0; i < vertexList.length(); i++) {
-        int adjVertex = vertexList.at(i);
+    for (int i = 0; i < vertexList.size(); i++) {
+        int adjVertex = vertexList[i];
 
         if (!visited[i]) 
             this->DFSTopologicalSort(adjVertex, digraph, visited, topList);
@@ -235,15 +234,15 @@ List<List<int>> Digraph::getKosarajuComponents() {
     List<int> newRecStack;
     List<List<int>> components;
 
-    for (int i = 0; i < recStack.length(); i++) {
+    for (int i = 0; i < recStack.size(); i++) {
         List<int> component;
-        int vertex = recStack.at(i);
-        int vertexIndex = digraph.indexOfVertex(vertex);
+        int vertex = recStack[i];
+        int vertexIndex = digraph.getVertexIndex(vertex);
 
         if (!visited[vertexIndex]) {
             this->DFSRecStack(vertex, digraph, visited, newRecStack);
 
-            while (!newRecStack.isEmpty()) 
+            while (!newRecStack.empty()) 
                 component.insert(newRecStack.removeFirst());
 
             components.insert(component);
@@ -251,22 +250,4 @@ List<List<int>> Digraph::getKosarajuComponents() {
     }
 
     return components;
-}
-
-void Digraph::DFSRecStack(int vertex, Digraph digraph, bool* visited, List<int>& recStack) {
-    int vertexIndex = digraph.indexOfVertex(vertex);
-
-    List<int> adjVertexList = digraph.getAdjacencyList().at(vertexIndex);
-
-    visited[vertexIndex] = true;
-
-    for (int i = 0; i < adjVertexList.length(); i++) {
-        int adjVertex = adjVertexList.at(i);
-        int adjVertexIndex = digraph.indexOfVertex(adjVertex);
-
-        if (!visited[adjVertexIndex])
-            this->DFSRecStack(adjVertex, digraph, visited, recStack);
-    }
-
-    recStack.insert(vertex);
 }

@@ -45,36 +45,36 @@ class Graph {
         Graph(Graph&& other); 
         Graph& operator=(Graph& other); 
         Graph& operator=(Graph&& other); 
-        virtual void removeEdge(Edge edge);
         virtual void addEdge(Edge edge);
-        virtual bool isDirected();
-        virtual bool isConnected(); 
-        bool isWeighted();
-        void removeVertex(int vertex);
         void addVertex(int vertex);
+        virtual void removeEdge(Edge edge);
+        void removeVertex(int vertex);
         bool hasEdge(Edge edge);
-        Edge getEdge(int source, int destination);
         bool hasVertex(int vertex);
-        int getNumVertex();
-        int getNumEdges();
-        int vertexAt(int index);
         Edge edgeAt(int index);
-        int indexOfVertex(int vertex);
-        int indexOfEdge(Edge edge);
+        Edge edgeAt(int source, int destination);
+        int vertexAt(int index);
+        int getNumEdges();
+        int getNumVertex();
+        int getEdgeIndex(Edge edge);
+        int getVertexIndex(int vertex);
         int getVertexDegree(int vertex);
-        int getNumOddDegreeVertex(); 
+        int getNumVertexOddDegree(); 
         List<Edge> getEdgeList();
         List<int> getVertexList();
         List<List<int>> getAdjacencyList();
-        List<int> getAloneVertexList();
+        List<int> getVertexAloneList();
+        List<List<int>> getDFSOrderLists();
+        List<List<int>> getBFSOrderLists();
+        Graph getKruskalTree();
+        Graph getPrimTree();
+        virtual bool directed();
+        virtual bool connected(); 
+        bool weighted(); 
         virtual bool haveCycle(); 
         void printAdjacencyMatrix();
         void printAdjacencyList();
         void printFormatedData();
-        List<Graph> getDFSTree();
-        List<Graph> getBFSTree();
-        Graph getKruskalTree();
-        Graph getPrimTree();
 
     protected:
         List<Edge> edgeList;
@@ -84,63 +84,71 @@ class Graph {
         void updateAdjacencyMatrix();
         void updateAdjacencyList();
         void DFS(int vertex, Graph graph, bool* visited);
-        virtual bool DFSCycle(int vertex, Graph graph, bool* visited);
-        void DFSTree(int vertex, Graph graph, Graph& tree, bool* visited);
-        void BFSTree(int vertex, Graph graph, Graph& tree, bool* visited, List<int>& queue);
+        bool DFSCycle(int vertex, Graph graph, bool* visited);
+        void DFSRecStack(int vertex, Graph graph, bool* visited, List<int>& recStack);
+        void BFSRecStack(int vertex, Graph graph, bool* visited, List<int>& recStack, List<int>& queue);
 
     private:
         bool directGraph = false;
 };
 
+// constructor
 Edge::Edge(int source, int destination) {
     this->source = source;
     this->destination = destination;
 }
 
+// constructor
 Edge::Edge(int source, int destination, int weight) {
     this->source = source;
     this->destination = destination;
-    this->setWeight(weight);
+    setWeight(weight);
 }
 
+// return edge source
 int Edge::getSource() const {
     return this->source;
 }
 
+// return edge destination
 int Edge::getDestination() const {
     return this->destination;
 }
 
+// set edge source
 void Edge::setSource(int source) {
     this->source = source;
 }
 
+// set edge destination
 void Edge::setDestination(int destination) {
     this->destination = destination;
 }
 
+// set edge weight
 void Edge::setWeight(int weight) {
     this->weight = new int;
     *this->weight = weight;
 }
 
+// return true if edge has weight
 bool Edge::hasWeight() const {
     return this->weight != nullptr;
 }
 
+// return edge weight
 int Edge::getWeight() const {
-    if (this->hasWeight()) 
-        return *this->weight;
-
-    return -4564565;
+    return *this->weight;
 }
 
+// make edge reverse
 void Edge::reverse() {
     int aux = this->destination;
     this->destination = this->source;
     this->source = aux;
 }
 
+// operator == overload
 bool Edge::operator==(const Edge& other) {
     bool equal = true;
 
@@ -153,6 +161,7 @@ bool Edge::operator==(const Edge& other) {
     return equal;
 }
 
+// operator != overload
 bool Edge::operator!=(const Edge& other) {
     bool diff = true;
 
@@ -165,6 +174,7 @@ bool Edge::operator!=(const Edge& other) {
     return diff;
 }
 
+// operator < overload
 bool Edge::operator<(const Edge& other) {
     if (!other.hasWeight() or !this->hasWeight()) 
         return false;
@@ -207,27 +217,27 @@ Graph::Graph(List<int> vertexList) {
 Graph::Graph(List<int> vertexList, List<Edge> edgeList) {
     this->vertexList = vertexList;
     
-    for (int i = 0; i < edgeList.length(); i++) 
-        this->addEdge(edgeList.at(i));
+    for (int i = 0; i < edgeList.size(); i++) 
+        this->addEdge(edgeList[i]);
 }
 
 Graph::Graph(List<int> vertexList, List<Edge> edgeList, List<int> weightList) {
     exception e;
 
-    if (weightList.length() != edgeList.length()) 
+    if (weightList.size() != edgeList.size()) 
         throw e;
 
     this->vertexList = vertexList;
 
-    for (int i = 0; i < edgeList.length(); i++) {
-        edgeList.at(i).setWeight(weightList.at(i));
-        this->addEdge(edgeList.at(i));
+    for (int i = 0; i < edgeList.size(); i++) {
+        edgeList[i].setWeight(weightList[i]);
+        this->addEdge(edgeList[i]);
     }
 }
 
 Graph::Graph(Graph& other) {
     if (this != &other)  {
-        this->directGraph = other.isDirected();
+        this->directGraph = other.directed();
         this->vertexList = other.getVertexList();
         this->edgeList = other.getEdgeList();  
     }
@@ -243,7 +253,7 @@ Graph::Graph(Graph&& other) {
 
 Graph& Graph::operator=(Graph& other) {
     if (this != &other)  {
-        this->directGraph = other.isDirected();
+        this->directGraph = other.directed();
         this->vertexList = other.getVertexList();
         this->edgeList = other.getEdgeList();  
     }
@@ -264,19 +274,16 @@ Graph&  Graph::operator=(Graph&& other) {
 void Graph::printAdjacencyMatrix() {
     this->updateAdjacencyMatrix();
 
-    List<List<int>> adjacencyMatrix = this->adjacencyMatrix;
-    List<int> vertexList = this->vertexList;
-
     cout << "  ";
-    for (int i = 0; i < vertexList.length(); i++) {
-        cout << vertexList.at(i) << " ";
+    for (int i = 0; i < this->vertexList.size(); i++) {
+        cout << this->vertexList[i] << " ";
     }
     cout << endl;
 
-    for (int i = 0; i < adjacencyMatrix.length(); i++) {
-        cout << vertexList.at(i) << " ";
-        for (int j = 0; j < adjacencyMatrix.at(i).length(); j++) {
-            cout << adjacencyMatrix.at(i).at(j) << " ";
+    for (int i = 0; i < this->adjacencyMatrix.size(); i++) {
+        cout << this->vertexList[i] << " ";
+        for (int j = 0; j < this->adjacencyMatrix[i].size(); j++) {
+            cout << this->adjacencyMatrix[i][j] << " ";
         }
         cout << endl;
     }
@@ -285,35 +292,29 @@ void Graph::printAdjacencyMatrix() {
 void Graph::printAdjacencyList() {
     this->updateAdjacencyList();
 
-    List<List<int>> adjacencyList = this->adjacencyList;
-    List<int> vertexList = this->vertexList;
-
-    for (int i = 0; i < adjacencyList.length(); i++) {
-        cout << vertexList.at(i) << " -> ";
-        for (int j = 0; j < adjacencyList.at(i).length(); j++) {
-            cout << adjacencyList.at(i).at(j) << " ";
+    for (int i = 0; i < this->adjacencyList.size(); i++) {
+        cout << this->vertexList[i] << " -> ";
+        for (int j = 0; j < this->adjacencyList[i].size(); j++) {
+            cout << this->adjacencyList[i][j] << " ";
         }
         cout << endl;
     }
 }
 
 void Graph::printFormatedData() {
-    List<int> vertexList = this->vertexList;
-    List<Edge> edgeList = this->edgeList;
-
     cout << "V = {";
 
-    for (int i = 0; i < vertexList.length(); i++) {
-        cout << vertexList.at(i);
-        if (i != vertexList.length() - 1) 
+    for (int i = 0; i < this->vertexList.size(); i++) {
+        cout << this->vertexList[i];
+        if (i != this->vertexList.size() - 1) 
             cout << ",";
     }
 
     cout << "}; A = {";
 
-    for (int i = 0; i < edgeList.length(); i++) {
-        cout << edgeList.at(i);
-        if (i != edgeList.length() - 1) 
+    for (int i = 0; i < this->edgeList.size(); i++) {
+        cout << this->edgeList[i];
+        if (i != this->edgeList.size() - 1) 
             cout << ",";
     }
 
@@ -321,63 +322,48 @@ void Graph::printFormatedData() {
 }
 
 void Graph::updateAdjacencyMatrix() {
-    List<List<int>> newAdjacencyMatrix;
-    List<int> vertexList = this->vertexList;
-    List<Edge> edgeList = this->edgeList;
+    int matSize = this->vertexList.size();
+    List<List<int>> newAdjacencyMatrix(matSize, List<int>(matSize, 0));
 
-    for (int i = 0; i < vertexList.length(); i++) {
-        List<int> newList;
-        for (int j = 0; j < vertexList.length(); j++) 
-            newList.insert(0);
-        newAdjacencyMatrix.insert(newList);
+    for (int i = 0; i < this->edgeList.size(); i++) {
+        int sourceIndex = this->vertexList.indexOf(this->edgeList[i].getSource());
+        int destinationIndex = this->vertexList.indexOf(this->edgeList[i].getDestination());
+
+        newAdjacencyMatrix[sourceIndex][destinationIndex]++;
     }
-
-    for (int i = 0; i < edgeList.length(); i++) {
-        newAdjacencyMatrix
-            .at(vertexList.indexOf(edgeList.at(i).getSource()))
-            .at(vertexList.indexOf(edgeList.at(i).getDestination()))++;
-    }   
-
+       
     this->adjacencyMatrix = newAdjacencyMatrix;
 }
 
 void Graph::updateAdjacencyList() {
-    List<List<int>> newAdjacencyList;
-    List<int> vertexList = this->vertexList;
-    List<Edge> edgeList = this->edgeList;
+    int adjSize = this->vertexList.size();
+    List<List<int>> newAdjacencyList(adjSize, List<int>());
 
-    for (int i = 0; i < vertexList.length(); i++) {
-        List<int> newList;
-        newAdjacencyList.insert(newList);
-    }
-
-    for (int i = 0; i < vertexList.length(); i++) 
-        for (int j = 0; j < edgeList.length(); j++) 
-            if (vertexList.at(i) == edgeList.at(j).getSource()) 
-                newAdjacencyList.at(i).insert(edgeList.at(j).getDestination());
+    for (int i = 0; i < adjSize; i++) 
+        for (int j = 0; j < this->edgeList.size(); j++) 
+            if (this->vertexList[i] == this->edgeList[j].getSource()) 
+                newAdjacencyList[i].insert(this->edgeList[j].getDestination());
         
     this->adjacencyList = newAdjacencyList;
 }
 
 int Graph::getVertexDegree(int vertex) {
-    List<Edge> edgeList = this->edgeList;
     int count = 0;
 
-    for (int i = 0; i < edgeList.length(); i++) 
-        if (edgeList.at(i).getDestination() == vertex) 
+    for (int i = 0; i < this->edgeList.size(); i++) 
+        if (this->edgeList[i].getDestination() == vertex) 
             count++;
 
     return count;
 }
 
 void Graph::removeVertex(int vertex) {
-    List<Edge> edgeList = this->edgeList;
-
+    List<Edge> oldEdgeList = this->edgeList;
     this->vertexList.remove(vertex);
 
-    for (int i = 0; i < edgeList.length(); i++) 
-        if (edgeList.at(i).getSource() == vertex or edgeList.at(i).getDestination() == vertex) 
-            this->edgeList.remove(edgeList.at(i));
+    for (int i = 0; i < oldEdgeList.size(); i++) 
+        if (oldEdgeList[i].getSource() == vertex or oldEdgeList[i].getDestination() == vertex) 
+            this->edgeList.remove(oldEdgeList[i]);
 }
 
 bool Graph::hasEdge(Edge edge) {
@@ -410,30 +396,41 @@ bool Graph::hasVertex(int vertex) {
 }
 
 int Graph::getNumVertex() {
-    return this->vertexList.length();
+    return this->vertexList.size();
 }
 
 int Graph::vertexAt(int index) {
-    return this->vertexList.at(index);
+    return this->vertexList[index];
 }
 
 int Graph::getNumEdges() {
-    return this->edgeList.length();
+    return this->edgeList.size();
 }
 
 Edge Graph::edgeAt(int index) {
-    return this->edgeList.at(index);
+    return this->edgeList[index];
 }
 
-int Graph::indexOfEdge(Edge edge) {
+Edge Graph::edgeAt(int source, int destination) {
+    for (int i = 0; i < this->edgeList.size(); i++) {
+        Edge edge = this->edgeList[i];
+
+        if (edge.getSource() == source and edge.getDestination() == destination) 
+            return edge;
+    }
+
+    throw runtime_error("this edge does not exists");
+}
+
+int Graph::getEdgeIndex(Edge edge) {
     return this->edgeList.indexOf(edge);
 }
 
-int Graph::indexOfVertex(int vertex) {
+int Graph::getVertexIndex(int vertex) {
     return this->vertexList.indexOf(vertex);
 }
 
-bool Graph::isDirected() {
+bool Graph::directed() {
     return this->directGraph;
 }
 
@@ -450,14 +447,14 @@ List<int> Graph::getVertexList() {
     return this->vertexList;
 }
 
-bool Graph::isWeighted() {
-    if (this->edgeList.isEmpty()) 
+bool Graph::weighted() {
+    if (this->edgeList.empty()) 
         return false;
 
-    return this->edgeList.at(0).hasWeight();
+    return this->edgeList[0].hasWeight();
 }
 
-bool Graph::isConnected() {
+bool Graph::connected() {
     Graph graph = *this;
     int numVertex = graph.getNumVertex();
     bool visited[numVertex];
@@ -475,59 +472,46 @@ bool Graph::isConnected() {
 }
 
 void Graph::DFS(int vertex, Graph graph, bool* visited) {
-    int vertexIndex = graph.indexOfVertex(vertex);
+    int vertexIndex = graph.getVertexIndex(vertex);
 
-    List<int> vertexList = graph.getAdjacencyList().at(vertexIndex);
+    List<int> vertexList = graph.getAdjacencyList()[vertexIndex];
 
     visited[vertexIndex] = true;
 
-    for (int i = 0; i < vertexList.length(); i++) {
+    for (int i = 0; i < vertexList.size(); i++) {
         int adjIndex, adjVertex;
 
-        adjVertex = vertexList.at(i);
-        adjIndex = graph.indexOfVertex(adjVertex);
+        adjVertex = vertexList[i];
+        adjIndex = graph.getVertexIndex(adjVertex);
 
         if (!visited[adjIndex]) 
             this->DFS(adjVertex, graph, visited);
     }
 }
 
-int Graph::getNumOddDegreeVertex() {
-    List<int> vertexList = this->vertexList;
+int Graph::getNumVertexOddDegree() {
     int count = 0;
 
-    for (int i = 0; i < vertexList.length(); i++) 
-        if (this->getVertexDegree(vertexList.at(i)) % 2 != 0) 
+    for (int i = 0; i < this->vertexList.size(); i++) 
+        if (this->getVertexDegree(this->vertexList[i]) % 2 != 0) 
             count++;
 
     return count;
 }
 
-Edge Graph::getEdge(int source, int destination) {
-    for (int i = 0; i < this->edgeList.length(); i++) {
-        Edge edge = this->edgeList.at(i);
-        if (edge.getSource() == source and edge.getDestination() == destination) 
-            return edge;
-    }
-
-    throw runtime_error("this edge does not exists");
-}
-
-List<int> Graph::getAloneVertexList() {
-    List<int> vertexList = this->vertexList;
-    List<Edge> edgeList = this->edgeList;
+List<int> Graph::getVertexAloneList() {
     List<int> aloneVertexList;
     bool exist;
 
-    for (int i = 0; i < vertexList.length(); i++) {
+    for (int i = 0; i < this->vertexList.size(); i++) {
         exist = false;
 
-        for (int j = 0; j < edgeList.length(); j++) 
-            if (vertexList.at(i) == edgeList.at(j).getSource() or vertexList.at(i) == edgeList.at(j).getDestination()) 
+        for (int j = 0; j < this->edgeList.size(); j++) 
+            if (this->vertexList[i] == this->edgeList[j].getSource() or this->vertexList[i] == this->edgeList[j].getDestination()) 
                 exist = true;
 
         if (!exist) 
-            aloneVertexList.insert(vertexList.at(i));
+            aloneVertexList.insert(this->vertexList[i]);
     }    
 
     return aloneVertexList;
@@ -553,14 +537,14 @@ bool Graph::haveCycle() {
 }
 
 bool Graph::DFSCycle(int vertex, Graph graph, bool* visited) {
-    int vertexIndex = graph.indexOfVertex(vertex);
-    List<int> vertexList = graph.getAdjacencyList().at(vertexIndex);
+    int vertexIndex = graph.getVertexIndex(vertex);
+    List<int> vertexList = graph.getAdjacencyList()[vertexIndex];
 
     visited[vertexIndex] = true;
 
-    for (int i = 0; i < vertexList.length(); i++) {
-        int adjVertex = vertexList.at(i);
-        int adjVertexIndex = graph.indexOfVertex(adjVertex);
+    for (int i = 0; i < vertexList.size(); i++) {
+        int adjVertex = vertexList[i];
+        int adjVertexIndex = graph.getVertexIndex(adjVertex);
 
         if (!visited[adjVertexIndex]) {
             graph.removeEdge(Edge(adjVertex, vertex));
@@ -575,9 +559,10 @@ bool Graph::DFSCycle(int vertex, Graph graph, bool* visited) {
     return false;
 }
 
-List<Graph> Graph::getDFSTree() {
+List<List<int>> Graph::getDFSOrderLists() {
+    List<List<int>> recStackList;
+    List<int> recStack;
     Graph graph = *this;
-    List<Graph> treeList;
     int numVertex = graph.getNumVertex();
     bool visited[numVertex];
     
@@ -586,37 +571,40 @@ List<Graph> Graph::getDFSTree() {
 
     for (int i = 0; i < numVertex; i++) {
         if (!visited[i]) {
-            Graph tree(graph.getVertexList());
-            this->DFSTree(graph.vertexAt(i), graph, tree, visited);
-            treeList.insert(tree);
+            this->DFSRecStack(graph.vertexAt(i), graph, visited, recStack);
+            recStack.reverse();
+            recStackList.insert(recStack);
+            recStack.clear();
         }
     } 
 
-    return treeList;
+    return recStackList;
 }
 
-void Graph::DFSTree(int vertex, Graph graph, Graph& tree, bool* visited) {
-    int vertexIndex = graph.indexOfVertex(vertex);
+void Graph::DFSRecStack(int vertex, Graph graph, bool* visited, List<int>& recStack) {
+    int vertexIndex = graph.getVertexIndex(vertex);
 
-    List<int> vertexList = graph.getAdjacencyList().at(vertexIndex);
+    List<int> adjVertexList = graph.getAdjacencyList()[vertexIndex];
 
     visited[vertexIndex] = true;
 
-    for (int i = 0; i < vertexList.length(); i++) {
-        int adjVertex = vertexList.at(i);
-        int adjVertexIndex = graph.indexOfVertex(adjVertex);
+    for (int i = 0; i < adjVertexList.size(); i++) {
+        int adjVertex = adjVertexList[i];
+        int adjVertexIndex = graph.getVertexIndex(adjVertex);
 
-        if (!visited[adjVertexIndex]) {
-            tree.addEdge(Edge(vertex, adjVertex));
-            this->DFSTree(adjVertex, graph, tree, visited);
-        }
+        if (!visited[adjVertexIndex])
+            this->DFSRecStack(adjVertex, graph, visited, recStack);
     }
+
+    recStack.insert(vertex);
 }
 
-List<Graph> Graph::getBFSTree() {
-    Graph graph = *this;
-    List<Graph> treeList;
+List<List<int>> Graph::getBFSOrderLists() {
+    List<List<int>> recStackList;
     List<int> queue;
+    List<int> recStack;
+
+    Graph graph = *this;
     int numVertex = graph.getNumVertex();
     bool visited[numVertex];
     
@@ -625,41 +613,40 @@ List<Graph> Graph::getBFSTree() {
 
     for (int i = 0; i < graph.getNumVertex(); i++) {
         if (!visited[i]) {
-            Graph tree;
-            tree.addVertex(graph.vertexAt(i));
-            this->BFSTree(graph.vertexAt(i), graph, tree, visited, queue);
-            treeList.insert(tree);
+            this->BFSRecStack(graph.vertexAt(i), graph, visited, recStack, queue);
+            recStack.reverse();
+            recStackList.insert(recStack);
+            recStack.clear();
         }
     } 
 
-    return treeList;
+    return recStackList;
 }
 
-void Graph::BFSTree(int vertex, Graph graph, Graph& tree, bool* visited, List<int>& queue) {
-    int vertexIndex = graph.indexOfVertex(vertex);
+void Graph::BFSRecStack(int vertex, Graph graph, bool* visited, List<int>& recStack, List<int>& queue) {
+    int vertexIndex = graph.getVertexIndex(vertex);
 
-    List<int> vertexList = graph.getAdjacencyList().at(vertexIndex);
+    List<int> vertexList = graph.getAdjacencyList()[vertexIndex];
 
     visited[vertexIndex] = true;
 
-    for (int i = 0; i < vertexList.length(); i++) {
-        int adjVertex = vertexList.at(i);
-        int adjVertexIndex = graph.indexOfVertex(adjVertex);
+    for (int i = 0; i < vertexList.size(); i++) {
+        int adjVertex = vertexList[i];
+        int adjVertexIndex = graph.getVertexIndex(adjVertex);
 
         if (!visited[adjVertexIndex]) {
-            tree.addVertex(adjVertex);
-            tree.addEdge(Edge(vertex, adjVertex));
-
             visited[adjVertexIndex] = true;
             queue.insert(adjVertex);
         }
     }
 
-    while (!queue.isEmpty()) {
+    while (!queue.empty()) {
         int nextVisitVertex = queue.removeFirst();
-        int nextVisitVertexIndex = graph.indexOfVertex(nextVisitVertex);
-        this->BFSTree(nextVisitVertex, graph, tree, visited, queue);
+        int nextVisitVertexIndex = graph.getVertexIndex(nextVisitVertex);
+        this->BFSRecStack(nextVisitVertex, graph, visited, recStack, queue);
     }
+
+    recStack.insert(vertex);
 }
 
 Graph Graph::getKruskalTree() {
@@ -668,7 +655,7 @@ Graph Graph::getKruskalTree() {
 
     edgeList.sort();
     
-    while (!edgeList.isEmpty()) {
+    while (!edgeList.empty()) {
         Edge next = edgeList.removeFirst();
         kruskal.addEdge(next);
 
@@ -680,39 +667,37 @@ Graph Graph::getKruskalTree() {
 }
 
 Graph Graph::getPrimTree() {
-    List<List<int>> adjacencyList = this->getAdjacencyList();
-    List<int> vertexList = this->vertexList;
     List<int> queue = this->vertexList;
-    int key[vertexList.length()];
-    int parents[vertexList.length()];
+    int key[this->vertexList.size()];
+    int parents[this->vertexList.size()];
     int u, v;
 
-    for (int i = 0; i < vertexList.length(); i++) {
+    for (int i = 0; i <  this->vertexList.size(); i++) {
         key[i] = 9999999;
         parents[i] = -1;
     }
 
     key[0] = 0;
 
-    while (!queue.isEmpty()) {
+    while (!queue.empty()) {
         int minKeyIndex = 0;
 
-        for (int i = 0; i < queue.length(); i++) {
-            int index = vertexList.indexOf(queue.at(i));
+        for (int i = 0; i < queue.size(); i++) {
+            int index = this->vertexList.indexOf(queue[i]);
 
-            if (key[index] < key[vertexList.indexOf(queue.at(minKeyIndex))]) 
+            if (key[index] < key[this->vertexList.indexOf(queue[minKeyIndex])]) 
                 minKeyIndex = i;
         }
 
-        u = queue.at(minKeyIndex);
+        u = queue[minKeyIndex];
         queue.remove(u);
 
-        List<int> adj = adjacencyList.at(vertexList.indexOf(u));
+        List<int> adj = this->getAdjacencyList()[this->vertexList.indexOf(u)];
 
-        for (int i = 0; i < adj.length(); i++) {
-            v = adj.at(i);
-            int vIndex = vertexList.indexOf(v);
-            Edge edge = this->getEdge(u, v);
+        for (int i = 0; i < adj.size(); i++) {
+            v = adj[i];
+            int vIndex = this->vertexList.indexOf(v);
+            Edge edge = this->edgeAt(u, v);
             int weight = edge.getWeight();
 
             if (queue.has(v) and weight < key[vIndex]) {
@@ -722,11 +707,11 @@ Graph Graph::getPrimTree() {
         }   
     }
 
-    Graph prim(vertexList);
+    Graph prim(this->vertexList);
 
-    for (int i = 0; i < vertexList.length(); i++) 
+    for (int i = 0; i < this->vertexList.size(); i++) 
         if (parents[i] != -1) 
-            prim.addEdge(Edge(parents[i], vertexList.at(i), key[i]));
+            prim.addEdge(Edge(parents[i], this->vertexList[i], key[i]));
 
     return prim;
 }

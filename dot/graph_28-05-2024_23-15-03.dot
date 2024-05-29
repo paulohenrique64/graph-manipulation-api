@@ -1,2 +1,0 @@
-graph {label="graph representation"
-labelloc = t;sep="0.8";0 -- 1;1 -- 2;2 -- 3;3 -- 0;2 -- 4;4 -- 5;5 -- 6;6 -- 4;6 -- 7;}

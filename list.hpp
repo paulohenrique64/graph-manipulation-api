@@ -6,13 +6,15 @@ using namespace std;
 template <typename T>
 class List {
     public:
-        List() = default; // construtor
-        List(const List<T>& other); // construtor de copia
+        List() = default; 
+        List(int size, T value); 
+        List(const List<T>& other); 
         bool operator==(const List<T>& other) const; 
         bool operator!=(const List<T>& other) const; 
         List<T>& operator=(const List<T>& other); 
+        T& operator[](const int index) const;
         template <typename U> friend ostream& operator<<(ostream& os, const List<U>& list);
-        ~List(); // destrutor
+        ~List(); 
         void insert(T element);
         void insertAt(int index, T element);
         void remove(T element);
@@ -20,11 +22,12 @@ class List {
         bool has(T element) const;
         int indexOf(T element) const;
         T& at(int index) const;
-        int length() const;
+        int size() const;
         void printList() const;
-        bool isEmpty();
+        bool empty();
         void sort();
         void reverse();
+        void clear();
 
     private:
         T* list = nullptr;
@@ -36,14 +39,24 @@ class List {
 template <typename T>
 List<T>::List(const List<T>& other) {
     if (this != &other) {
-        this->numElements = other.length();
-        this->list = new T[other.length()];
+        this->numElements = other.size();
+        this->list = new T[other.size()];
 
-        for (int i = 0; i < other.length(); i++) {
-            this->list[i] = other.at(i);
+        for (int i = 0; i < other.size(); i++) {
+            this->list[i] = other[i];
         }
     }
 }
+
+template <typename T>
+List<T>::List(int size, T value) {
+    numElements = size;
+    list = new T[numElements];
+
+    for (int i = 0; i < numElements; i++)
+        list[i] = value;
+
+} 
 
 template <typename T>
 List<T>::~List() {
@@ -66,10 +79,6 @@ void List<T>::insert(T element) {
 
 template <typename T>
 void List<T>::insertAt(int index, T element) {
-    exception e;
-
-    if (index < 0 or index >= this->numElements) throw e;
-
     this->list[index] = element;
 }
 
@@ -97,11 +106,6 @@ void List<T>::remove(T element) {
 
 template <typename T>
 T List<T>::removeFirst() {
-    exception e;
-
-    if (this->isEmpty())
-        throw e;
-
     T element = this->list[0];
     this->remove(element);
     return element;
@@ -127,18 +131,17 @@ int List<T>::indexOf(T element) const {
 
 template <typename T>
 T& List<T>::at(int index) const {
-    if (index >= 0 and index < this->numElements) {
-        return this->list[index];
-    } else {
-        exception e;
-        throw e;
-    }
+    return this->list[index];
 }
 
 template <typename T>
 void List<T>::deleteList() {
     this->numElements = 0;
-    delete[] this->list;
+    
+    if (this->list != nullptr) {
+        delete[] this->list;
+        this->list = nullptr;
+    }
 }
 
 template <typename T>
@@ -150,22 +153,22 @@ void List<T>::printList() const {
 }
 
 template <typename T>
-int List<T>::length() const {
+int List<T>::size() const {
     return this->numElements;
 }
 
 template <typename T>
 bool List<T>::operator==(const List<T>& other) const {
-    for (int i = 0; i < other.length(); i++) {
-        if (this->list[i] != other.at(i)) return false;
+    for (int i = 0; i < other.size(); i++) {
+        if (this->list[i] != other[i]) return false;
     }
     return true;
 }
 
 template <typename T>
 bool List<T>::operator!=(const List<T>& other) const {
-    for (int i = 0; i < other.length(); i++) {
-        if (this->list[i] != other.at(i)) return true;
+    for (int i = 0; i < other.size(); i++) {
+        if (this->list[i] != other[i]) return true;
     }
     return false;
 }
@@ -173,11 +176,11 @@ bool List<T>::operator!=(const List<T>& other) const {
 template <typename T>
 List<T>& List<T>::operator=(const List<T>& other) {
     if (this != &other) {
-        this->numElements = other.length();
-        this->list = new T[other.length()];
+        this->numElements = other.size();
+        this->list = new T[other.size()];
 
-        for (int i = 0; i < other.length(); i++) {
-            this->list[i] = other.at(i);
+        for (int i = 0; i < other.size(); i++) {
+            this->list[i] = other[i];
         }
     }
 
@@ -186,25 +189,30 @@ List<T>& List<T>::operator=(const List<T>& other) {
 
 template <typename T>
 ostream& operator<<(ostream& os, const List<T>& list) {
-    for (int i = 0; i < list.length(); i++) {
-        os << list.at(i) << " ";
+    for (int i = 0; i < list.size(); i++) {
+        os << list[i] << " ";
     }
     cout << endl;
     return os;      
 }
 
 template <typename T>
-bool List<T>::isEmpty() {
+T& List<T>::operator[](const int index) const {
+    return this->list[index];
+}
+
+template <typename T>
+bool List<T>::empty() {
     return this->numElements == 0;
 }
 
 template <typename T>
 void List<T>::sort() {
     T* list = this->list;
-    int length = this->numElements;
+    int size = this->numElements;
 
-    for (int i = 0; i < length; i++) {
-        for (int j = i + 1; j < length; j++) {
+    for (int i = 0; i < size; i++) {
+        for (int j = i + 1; j < size; j++) {
             if (list[i] > list[j]) {
                 T aux = list[j];
                 list[j] = list[i];
@@ -222,5 +230,10 @@ void List<T>::reverse() {
         this->list[i] = this->list[j];
         this->list[j--] = aux;
     }
+}
+
+template <typename T>
+void List<T>::clear() {
+    this->deleteList();
 }
  

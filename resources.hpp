@@ -1,11 +1,3 @@
-#ifdef _WIN32
-    #define OPEN_IMAGE_COMMAND "start"
-    #define OUTPUT_BUFFER "";
-#else
-    #define OPEN_IMAGE_COMMAND "xdg-open"
-    #define OUTPUT_BUFFER " > /dev/null 2> /dev/null &"
-#endif
-
 #pragma once
 #include <iostream>
 #include <exception>
@@ -17,7 +9,22 @@
 
 using namespace std;
 
+// commands for opening generated image in each operational system
+#ifdef _WIN32
+    // windows command
+    #define OPEN_IMAGE_COMMAND "start"
+    #define OUTPUT_BUFFER "";
+#else
+    // linux command
+    #define OPEN_IMAGE_COMMAND "xdg-open"
+    // directed output for a null file
+    #define OUTPUT_BUFFER " > /dev/null 2> /dev/null &"
+#endif
+
+// rgb random colors
 const int numColors = 20;
+
+// this aproach will be replaced for a random rgb generator function
 const string colors[numColors] = {
     "#33a8c7","#a0e426","#9336fd","#fdf148","#ffab00",
     "#f77976","#f77976","#f050ae","#f050ae","#d883ff",
@@ -25,11 +32,14 @@ const string colors[numColors] = {
     "#9b5de5","#00bbf9","#00f5d4","#00bbf9","#f15bb50"
 };
 
+// functions prototypes
 Graph* generateGraphFromFile(string filePath, bool directGraph);
 void generateGraphImage(Graph graph, string engine = "fdp", string title = "", List<List<int>>* components = nullptr);
-void generateGraphText(Graph graph);
+void generateGraphText(Graph graph, string filePath);
 string generateGraphFileName(string extension, bool digraph);
 
+
+// open the file in filepath and parse it in a new graph object
 Graph* generateGraphFromFile(string filePath, bool directGraph) {
     ifstream file;
     exception e;
@@ -63,7 +73,7 @@ Graph* generateGraphFromFile(string filePath, bool directGraph) {
     } while (trash != '}');
 
 
-    // "A = {x,y};" ou "A = {(x,y),(w,x),(y,z)};" ou "A = {};"
+    // "A = {x,y};" or "A = {(x,y),(w,x),(y,z)};" or "A = {};"
     getline(file, s, '{');
     if (s != " A = ") throw e;
     getline(file, s, ';');
@@ -81,7 +91,7 @@ Graph* generateGraphFromFile(string filePath, bool directGraph) {
         } while (trash != '}');
     }
 
-    // "P = {10,20,30,40,50}; se existir"
+    // "P = {10,20,30,40,50};"
     try {   
         getline(file, s, '{');
     } catch (exception e) {
@@ -117,20 +127,22 @@ Graph* generateGraphFromFile(string filePath, bool directGraph) {
     return graph;
 }
 
+// generate a image from graph object
 void generateGraphImage(Graph graph, string engine, string title, List<List<int>>* components) {
-    List<int> vertexList = graph.getVertexList(), aloneVertexList = graph.getAloneVertexList();
-    List<Edge> edgeList = graph.getEdgeList(), edgeListCopy = edgeList;
+    List<int> vertexList = graph.getVertexList();
+    List<int> aloneVertexList = graph.getVertexAloneList();
+    List<Edge> edgeList = graph.getEdgeList();
 
-    string imageName = generateGraphFileName("png", graph.isDirected());
-    string fileName = generateGraphFileName("dot", graph.isDirected());
+    string imageName = generateGraphFileName("png", graph.directed());
+    string fileName = generateGraphFileName("dot", graph.directed());
     ofstream output("./dot/" + fileName, ios::trunc);
 
-    graph.isDirected() ? output << "digraph {" : output << "graph {";
+    graph.directed() ? output << "digraph {" : output << "graph {";
     output << "label=\""+ title + "\"\nlabelloc = t;sep=\"0.8\";";
 
-    // components (if exists)
+    // components 
     if (components != nullptr) {
-        int numComponents = components->length();
+        int numComponents = components->size();
 
         if (numComponents > numColors) {
             cout << "there are not enough colors to print the graph" << endl;
@@ -140,49 +152,50 @@ void generateGraphImage(Graph graph, string engine, string title, List<List<int>
         for (int i = 0; i < numComponents; i++) {
             List<int> component = components->at(i);
 
-            for (int j = 0; j < component.length(); j++)
-                output << component.at(j) <<" [fillcolor=\"" << colors[i] << "\" style=filled];";
+            for (int j = 0; j < component.size(); j++)
+                output << component[j] <<" [fillcolor=\"" << colors[i] << "\" style=filled];";
         }
     }
     
-    while (edgeListCopy.length() > 0) {
-        Edge next = edgeListCopy.removeFirst();
+    while (edgeList.size() > 0) {
+        Edge next = edgeList.removeFirst();
 
         output << next.getSource();
-        graph.isDirected() ? output << " -> " : output << " -- ";
+        graph.directed() ? output << " -> " : output << " -- ";
         output << next.getDestination();
 
         if (next.hasWeight())
             output << "[label=\"" << next.getWeight() << "\"]";
         output << ";";
 
-        if (!graph.isDirected()) {
+        if (!graph.directed()) {
             next.reverse();
-            edgeListCopy.remove(next);
+            edgeList.remove(next);
         }
     }
 
-    for (int i = 0; i < aloneVertexList.length(); i++) 
-        output << aloneVertexList.at(i) << ";";
+    for (int i = 0; i < aloneVertexList.size(); i++) 
+        output << aloneVertexList[i] << ";";
     
     output << "}";
     output.close();
 
     string imagePath = "./images/" + imageName;
     string dotFilePath = "./dot/" + fileName;
+    string command;
 
-    string command1 = engine + " -Tpng " + dotFilePath + " -o ./images/last.png";
-    string command2 = engine + " -Tpng " + dotFilePath + " -o " + imagePath + " && " + OPEN_IMAGE_COMMAND + " " + imagePath + OUTPUT_BUFFER;
-    
-    system(command1.c_str());
-    system(command2.c_str());
+    command = engine + " -Tpng " + dotFilePath + " -o ./images/last.png";
+    system(command.c_str());
+
+    command = engine + " -Tpng " + dotFilePath + " -o " + imagePath + " && " + OPEN_IMAGE_COMMAND + " " + imagePath + OUTPUT_BUFFER;
+    system(command.c_str());
 
     cout << "image created successfully" << endl;
 }
 
-void generateGraphText(Graph graph) {
-    ofstream output1;
-    ofstream output2;
+// generate text file from graph object
+void generateGraphText(Graph graph, string filePath) {
+    ofstream output(filePath, ios::trunc);
     string buffer;
 
     buffer += "V = {";
@@ -190,9 +203,8 @@ void generateGraphText(Graph graph) {
     for (int i = 0; i < graph.getNumVertex(); i++) {
         buffer += to_string(graph.vertexAt(i));
 
-        if (i != graph.getNumVertex() - 1) {
+        if (i != graph.getNumVertex() - 1) 
             buffer += ",";
-        }
     }
 
     buffer += "}; A = {";
@@ -204,23 +216,30 @@ void generateGraphText(Graph graph) {
         buffer += to_string(graph.edgeAt(i).getDestination());
         buffer += ")";
 
-        if (i != graph.getNumEdges() - 1) {
+        if (i != graph.getNumEdges() - 1) 
             buffer += ",";
-        }
     }
     
     buffer += "};";
 
-    output1.open("./text/" + generateGraphFileName("txt", graph.isDirected()), ios::trunc);
-    output2.open("./text/last.txt", ios::trunc);
+    if (graph.weighted()) {
+        buffer += " P = {";
 
-    output1 << buffer;
-    output2 << buffer;
+        for (int i = 0; i < graph.getNumEdges(); i++) {
+            buffer += to_string(graph.edgeAt(i).getWeight());
 
-    output1.close();
-    output2.close();
+            if (i != graph.getNumEdges() - 1) 
+                buffer += ",";
+        }
+
+        buffer += "};";
+    }
+
+    output << buffer;
+    output.close();
 }
 
+// generates a graph filename using datetime
 string generateGraphFileName(string extension, bool digraph) {
     string dateTime, fileName;
     time_t now = time(0); 
@@ -259,52 +278,4 @@ string generateGraphFileName(string extension, bool digraph) {
     fileName += extension;
 
     return fileName;
-}
-
-void generateGraphSCCImage(Graph graph, List<List<int>> components, string engine, string title) {
-    List<int> vertexList = graph.getVertexList(), aloneVertexList = graph.getAloneVertexList();
-    List<Edge> edgeList = graph.getEdgeList(), edgeListCopy = edgeList;
-
-    string imageName = generateGraphFileName("png", graph.isDirected());
-    string fileName = generateGraphFileName("dot", graph.isDirected());
-    ofstream output("./dot/" + fileName, ios::trunc);
-
-    graph.isDirected() ? output << "digraph {" : output << "graph {";
-    output << "label=\""+ title + "\"\nlabelloc = t;sep=\"0.8\";";
-
-
-
-    while (edgeListCopy.length() > 0) {
-        Edge next = edgeListCopy.removeFirst();
-
-        output << next.getSource();
-        graph.isDirected() ? output << " -> " : output << " -- ";
-        output << next.getDestination();
-
-        if (next.hasWeight())
-            output << "[label=\"" << next.getWeight() << "\"]";
-        output << ";";
-
-        if (!graph.isDirected()) {
-            next.reverse();
-            edgeListCopy.remove(next);
-        }
-    }
-
-    for (int i = 0; i < aloneVertexList.length(); i++) 
-        output << aloneVertexList.at(i) << ";";
-    
-    output << "}";
-    output.close();
-
-    string imagePath = "./images/" + imageName;
-    string dotFilePath = "./dot/" + fileName;
-
-    string command1 = engine + " -Tpng " + dotFilePath + " -o ./images/last.png";
-    string command2 = engine + " -Tpng " + dotFilePath + " -o " + imagePath + " && " + OPEN_IMAGE_COMMAND + " " + imagePath + OUTPUT_BUFFER;
-    
-    system(command1.c_str());
-    system(command2.c_str());
-
-    cout << "image created successfully" << endl;
 }
