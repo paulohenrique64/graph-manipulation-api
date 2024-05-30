@@ -172,15 +172,10 @@ bool Edge::operator==(const Edge& other) {
 
 // operator != overload
 bool Edge::operator!=(const Edge& other) {
-    bool diff = false;
+    if (*this == other) 
+        return false;
 
-    if (this->source != other.source or this->destination != other.destination)
-        diff = true;
-    
-    if (other.hasWeight() and this->hasWeight() and other.getWeight() == this->getWeight())
-        diff = false;
-
-    return diff;
+    return true;
 }
 
 // operator < overload
