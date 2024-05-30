@@ -133,9 +133,10 @@ void generateGraphImage(Graph graph, string engine, string title, List<List<int>
     List<int> aloneVertexList = graph.getVertexAloneList();
     List<Edge> edgeList = graph.getEdgeList();
 
-    string imageName = generateGraphFileName("png", graph.directed());
-    string fileName = generateGraphFileName("dot", graph.directed());
-    ofstream output("./dot/" + fileName, ios::trunc);
+    string command;
+    string imagePath = "./data/images/" + generateGraphFileName("png", graph.directed());
+    string dotFilePath = "./data/dot/" + generateGraphFileName("dot", graph.directed());
+    ofstream output(dotFilePath, ios::trunc);
 
     graph.directed() ? output << "digraph {" : output << "graph {";
     output << "label=\""+ title + "\"\nlabelloc = t;sep=\"0.8\";";
@@ -180,11 +181,7 @@ void generateGraphImage(Graph graph, string engine, string title, List<List<int>
     output << "}";
     output.close();
 
-    string imagePath = "./images/" + imageName;
-    string dotFilePath = "./dot/" + fileName;
-    string command;
-
-    command = engine + " -Tpng " + dotFilePath + " -o ./images/last.png";
+    command = engine + " -Tpng " + dotFilePath + " -o ./data/images/last.png";
     system(command.c_str());
 
     command = engine + " -Tpng " + dotFilePath + " -o " + imagePath + " && " + OPEN_IMAGE_COMMAND + " " + imagePath + OUTPUT_BUFFER;

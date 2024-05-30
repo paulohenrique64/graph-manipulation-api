@@ -13,6 +13,7 @@ class Edge {
         Edge() = default;
         Edge(int source, int destination);
         Edge(int source, int destination, int weight);
+        Edge(const Edge& other);
         void reverse();
         int getWeight() const;
         int getSource() const;
@@ -102,8 +103,16 @@ Edge::Edge(int source, int destination) {
 Edge::Edge(int source, int destination, int weight) {
     this->source = source;
     this->destination = destination;
-    setWeight(weight);
+    this->setWeight(weight);
 }
+
+// copy constructor
+Edge::Edge(const Edge& other) {
+    this->source = other.getSource();
+    this->destination = other.getDestination();
+    if (other.hasWeight())
+        this->setWeight(other.getWeight());
+} 
 
 // return edge source
 int Edge::getSource() const {
@@ -150,10 +159,10 @@ void Edge::reverse() {
 
 // operator == overload
 bool Edge::operator==(const Edge& other) {
-    bool equal = true;
+    bool equal = false;
 
-    if (this->source != other.source or this->destination != other.destination)
-        equal = false;
+    if (this->source == other.source and this->destination == other.destination)
+        equal = true;
     
     if (other.hasWeight() and this->hasWeight() and other.getWeight() != this->getWeight())
         equal = false;
@@ -163,10 +172,10 @@ bool Edge::operator==(const Edge& other) {
 
 // operator != overload
 bool Edge::operator!=(const Edge& other) {
-    bool diff = true;
+    bool diff = false;
 
-    if (this->source == other.source and this->destination == other.destination)
-        diff = false;
+    if (this->source != other.source or this->destination != other.destination)
+        diff = true;
     
     if (other.hasWeight() and this->hasWeight() and other.getWeight() == this->getWeight())
         diff = false;

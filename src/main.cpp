@@ -4,9 +4,9 @@
 #include <iomanip>
 #include <chrono>
 #include <thread>
-#include "graph.hpp"
-#include "digraph.hpp"
-#include "resources.hpp"
+#include "../include/graph.hpp"
+#include "../include/digraph.hpp"
+#include "../include/resources.hpp"
 
 using namespace std;
 using namespace chrono;
