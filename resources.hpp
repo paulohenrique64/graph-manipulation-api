@@ -195,47 +195,64 @@ void generateGraphImage(Graph graph, string engine, string title, List<List<int>
 
 // generate text file from graph object
 void generateGraphText(Graph graph, string filePath) {
+    List<int> vertexList = graph.getVertexList();
+    List<Edge> edgeList;
+    List<int> weightList;
+
     ofstream output(filePath, ios::trunc);
-    string buffer;
+    stringstream buffer;
 
-    buffer += "V = {";
+    // get edges and weights
+    // do not collect multiple edges on a graph
+    while (graph.getNumEdges() > 0) {
+        Edge edge = graph.edgeAt(0);
 
-    for (int i = 0; i < graph.getNumVertex(); i++) {
-        buffer += to_string(graph.vertexAt(i));
+        edgeList.insert(edge);
 
-        if (i != graph.getNumVertex() - 1) 
-            buffer += ",";
-    }
+        if (graph.weighted()) 
+            weightList.insert(edge.getWeight());
 
-    buffer += "}; A = {";
-
-    for (int i = 0; i < graph.getNumEdges(); i++) {
-        buffer += "(";
-        buffer += to_string(graph.edgeAt(i).getSource());
-        buffer += ",";
-        buffer += to_string(graph.edgeAt(i).getDestination());
-        buffer += ")";
-
-        if (i != graph.getNumEdges() - 1) 
-            buffer += ",";
-    }
-    
-    buffer += "};";
-
-    if (graph.weighted()) {
-        buffer += " P = {";
-
-        for (int i = 0; i < graph.getNumEdges(); i++) {
-            buffer += to_string(graph.edgeAt(i).getWeight());
-
-            if (i != graph.getNumEdges() - 1) 
-                buffer += ",";
+        if (!graph.directed()) {
+            edge.reverse();
+            graph.removeEdge(edge);
         }
 
-        buffer += "};";
+        graph.removeEdge(edge);
     }
 
-    output << buffer;
+    // vertex
+    buffer << "V = {";
+
+    for (int i = 0; i < vertexList.size(); i++) {
+        buffer << vertexList[i];
+
+        if (i != vertexList.size() - 1) 
+            buffer << ",";
+    }
+
+    // edges
+    buffer << "}; A = {";
+
+    for (int i = 0; i < edgeList.size(); i++) {
+        buffer << "(" << edgeList[i].getSource() << "," << edgeList[i].getDestination() << ")";
+        if (i != edgeList.size() - 1) buffer << ",";
+    }
+    
+    buffer << "};";
+
+    // weights
+    if (weightList.size() > 0) {
+        buffer << " P = {";
+
+        for (int i = 0; i < weightList.size(); i++) {
+            buffer << weightList[i];
+            if (i != weightList.size() - 1) buffer << ",";
+        }
+
+        buffer << "};";
+    }
+
+    output << buffer.str();
     output.close();
 }
 

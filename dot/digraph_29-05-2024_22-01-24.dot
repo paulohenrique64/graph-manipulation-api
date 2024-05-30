@@ -1,0 +1,2 @@
+digraph {label="strongly components"
+labelloc = t;sep="0.8";5 [fillcolor="#33a8c7" style=filled];3 [fillcolor="#a0e426" style=filled];4 [fillcolor="#9336fd" style=filled];6 [fillcolor="#fdf148" style=filled];1 [fillcolor="#ffab00" style=filled];2 [fillcolor="#f77976" style=filled];4 -> 2[label="2"];3 -> 4[label="3"];4 -> 1[label="1"];4 -> 6[label="5"];5 -> 4[label="7"];1 -> 2[label="1"];}

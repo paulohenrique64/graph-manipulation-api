@@ -1,2 +1,0 @@
-digraph {label="graph representation"
-labelloc = t;sep="0.8";4 -> 2[label="2"];3 -> 4[label="3"];4 -> 1[label="1"];4 -> 6[label="5"];5 -> 4[label="7"];}

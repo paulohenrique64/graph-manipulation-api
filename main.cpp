@@ -12,7 +12,7 @@ using namespace std;
 using namespace chrono;
 
 // chronometer variables
-time_point<system_clock> startTime, endTime; 
+time_point<steady_clock> startTime, endTime; 
 
 // functions prototypes
 void removalsAndInsertionsMenu(Graph* graph);
@@ -74,7 +74,10 @@ int main(int argc, char *argv[]) {
             }
 
             if (option != '0') {
-                printExecTime();
+                // if the system is not a windows
+                #ifndef _WIN32
+                    printExecTime();                 
+                #endif
                 backMenu();
             } else {
                 cout << endl << "saving changes..." << endl;
@@ -107,7 +110,7 @@ void representationsMenu(Graph graph) {
     cin >> option;
     system("clear || cls");
 
-    startTime = system_clock::now();
+    startTime = steady_clock::now();
     switch(option) {
         case 1: {
             cout << "adjacency matrix" << endl << endl;
@@ -130,7 +133,7 @@ void representationsMenu(Graph graph) {
         default:
             break;
     }
-    endTime = system_clock::now();
+    endTime = steady_clock::now();
 }
 
 void removalsAndInsertionsMenu(Graph* graph) {
@@ -161,9 +164,9 @@ void removalsAndInsertionsMenu(Graph* graph) {
                 edge.setWeight(weight);
             } 
 
-            startTime = system_clock::now();
+            startTime = steady_clock::now();
             graph->removeEdge(edge);
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         case 2: {
@@ -181,29 +184,29 @@ void removalsAndInsertionsMenu(Graph* graph) {
             } 
 
             try {
-                startTime = system_clock::now();
+                startTime = steady_clock::now();
                 graph->addEdge(edge);
             } catch (exception e) {
                 cout << "failed to add seleced edge" << endl;
             }
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
 
             break;
         }
         case 3: {
             cout << "enter a vertex to remove:";
             cin >> vertex;
-            startTime = system_clock::now();
+            startTime = steady_clock::now();
             graph->removeVertex(vertex);
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         case 4: { 
             cout << "enter a vertex to add:";
             cin >> vertex;
-            startTime = system_clock::now();
+            startTime = steady_clock::now();
             graph->addVertex(vertex);
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         default:
@@ -227,16 +230,16 @@ void verificationsMenu(Graph* graph) {
     cin >> option;
     system("clear || cls");
 
-    startTime = system_clock::now();
+    startTime = steady_clock::now();
     switch(option) {
         case 1: {
             cout << "num vertex: " << graph->getNumVertex() << endl;
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         case 2: {
             cout << "num edges: " << graph->getNumEdges() << endl;
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         case 3: { 
@@ -244,12 +247,12 @@ void verificationsMenu(Graph* graph) {
             cin >> vertex;
             system("clear || cls");
             cout << "degree of vertex " << vertex << ": " << graph->getVertexDegree(vertex) << endl;
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         case 4: {
             graph->connected() ? cout << "true" << endl : cout << "false" << endl;
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         case 5: { 
@@ -260,17 +263,17 @@ void verificationsMenu(Graph* graph) {
          
             Digraph* digraph = dynamic_cast<Digraph*>(graph);
             digraph->stronglyConnected() ? cout << "true" << endl : cout << "false" << endl;
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         case 6: {
             graph->haveCycle() ? cout << "true" << endl : cout << "false" << endl;
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             break;
         }
         case 7: {
             int numOddVertexDegree = graph->getNumVertexOddDegree();
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
 
             cout  << "this graph is ";
 
@@ -307,7 +310,7 @@ void treesMenu(Graph graph) {
     cin >> option;
     system("clear || cls");
 
-    startTime = system_clock::now();
+    startTime = steady_clock::now();
     switch(option) {
         case 1: case 2: {
             List<List<int>> orderLists;
@@ -315,11 +318,11 @@ void treesMenu(Graph graph) {
 
             if (option == 1) {
                 orderLists = graph.getDFSOrderLists();
-                endTime = system_clock::now();
+                endTime = steady_clock::now();
                 title = "deep first search";
             } else {
                 orderLists = graph.getBFSOrderLists();
-                endTime = system_clock::now();
+                endTime = steady_clock::now();
                 title = "breadth first search";
             }
 
@@ -357,7 +360,7 @@ void treesMenu(Graph graph) {
                 title = "prim tree";
             }
 
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             generateGraphImage(tree, "fdp", title);
             break;
         }
@@ -384,8 +387,8 @@ void algorithmsMenu(Graph* graph) {
     }
 
     Digraph* digraph = dynamic_cast<Digraph*>(graph);
-    startTime = system_clock::now();
-    
+     
+    startTime = steady_clock::now();
     switch(option) {
         case 1: case 2: {
             List<int> topList;
@@ -398,11 +401,11 @@ void algorithmsMenu(Graph* graph) {
 
             if (option == 1) {
                 topList = digraph->getKahnTopologicalSort();
-                endTime = system_clock::now();
+                endTime = steady_clock::now();
                 title = "kahn topological sort";
             } else {
                 topList = digraph->getDFSTopologicalSort();     
-                endTime = system_clock::now();
+                endTime = steady_clock::now();
                 title = "DFS topological sort";
             }
 
@@ -421,7 +424,7 @@ void algorithmsMenu(Graph* graph) {
         }
         case 3: {
             List<List<int>> components = digraph->getKosarajuComponents();
-            endTime = system_clock::now();
+            endTime = steady_clock::now();
             string title = "strongly components";
 
             // printing strongly components
@@ -434,9 +437,9 @@ void algorithmsMenu(Graph* graph) {
             generateGraphImage(*digraph, "fdp", title, &components);
             break;
         }
-        default:
+        default: 
             break;
-    }   
+    } 
 }
 
 void backMenu() {
@@ -447,6 +450,6 @@ void backMenu() {
 }
 
 void printExecTime() {
-    duration<double> elapsed_seconds = endTime - startTime;
-    cout << endl << "execution time: " << setprecision(7) << fixed << elapsed_seconds.count() << "s\n";
+    duration<double> elapsedSeconds = endTime - startTime;
+    cout << endl << "execution time: " << setprecision(8) << fixed << elapsedSeconds.count() << "s\n";
 }
