@@ -14,11 +14,12 @@ This software is necessary for graphical visualization of the graph or digraph
 sudo apt install graphviz
 ```
 
-### Usage
+### Build & Usage
 
 ```
 g++ ./src/main.cpp -o program.o
 ```
+* You can also build the project running the `Makefile` with Make
 
 ```
 ./program.o <text-file>
@@ -28,7 +29,7 @@ g++ ./src/main.cpp -o program.o
 ./program.o 
 ```
 
-The last command above will use the default "input.txt" file as input
+* The last command above will use the default `input.txt` file as input
 
 ## Text file structure with examples
 
